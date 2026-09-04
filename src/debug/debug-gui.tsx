@@ -63,6 +63,12 @@ function addWebcamFolder(gui: GUI) {
   folder.add(webcam, "mirror").name("Mirror");
   folder.add(webcam, "roomGlow", 0, 3, 0.01).name("Room glow");
   folder.add(webcam, "barIntensity", 0, 6, 0.05).name("Light bars");
+
+  const perf = folder.addFolder("Performance");
+  perf.add(webcam, "maxFps", 1, 30, 1).name("Max update FPS");
+  perf.add(webcam, "motionGate").name("Motion gate");
+  perf.add(webcam, "motionThreshold", 0, 0.2, 0.005).name("Motion threshold");
+  perf.add(webcam, "cubeResolution", [64, 128, 256, 512]).name("Cube resolution");
 }
 
 export default function DebugGui() {

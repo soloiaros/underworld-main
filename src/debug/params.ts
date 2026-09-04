@@ -55,7 +55,11 @@ export const webcamParams = {
   "monochrome": 0.86,
   "mirror": true,
   "roomGlow": 0.87,
-  "barIntensity": 0
+  "barIntensity": 0,
+  "maxFps": 15,
+  "motionGate": true,
+  "motionThreshold": 0.02,
+  "cubeResolution": 128
 }
 
 export type WebcamParams = typeof webcamParams;

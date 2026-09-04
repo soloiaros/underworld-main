@@ -1,20 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import type * as THREE from "three";
 import { params } from "@/debug/params";
 import { createScene } from "@/three/create-scene";
 import { createTextGeometry, createTextMesh, loadFont } from "@/three/load-text";
 import { animateText } from "@/three/animate-text";
-import {
-  createWebcamEnv,
-  type WebcamEnvHandle,
-  type WebcamEnvState,
-} from "@/three/webcam-env";
-import { useTheme } from "./theme-provider";
+import { createWebcamEnv } from "@/three/webcam-env";
 
 const TEXT = "Underworld";
-const STORAGE_KEY = "uw-webcam-reflections";
 
 /** Geometry-affecting params — when these change, the mesh is rebuilt. */
 function geometrySignature() {
@@ -31,37 +25,12 @@ function geometrySignature() {
 
 /**
  * Renders the word "Underworld" as animated chrome 3D text using the
- * Brotheric gothic typeface. Sits above the mist background; colours follow
- * the theme. On opt-in, the chrome reflects the user's front camera.
+ * Brotheric gothic typeface. Sits above the mist background; the chrome is
+ * identical in both themes. Asks for the front camera on load so the chrome
+ * can reflect the user; falls back to the studio environment if denied.
  */
 export default function UnderworldText() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const webcamEnvRef = useRef<WebcamEnvHandle | null>(null);
-  const [webcamState, setWebcamState] = useState<WebcamEnvState>("off");
-  const { theme } = useTheme();
-  const themeRef = useRef(theme);
-
-  useEffect(() => {
-    themeRef.current = theme;
-  }, [theme]);
-
-  const toggleWebcam = useCallback(() => {
-    const env = webcamEnvRef.current;
-    if (!env || env.state === "requesting") return;
-
-    if (env.state === "live") {
-      env.stop();
-      setWebcamState("off");
-      window.localStorage.setItem(STORAGE_KEY, "off");
-      return;
-    }
-
-    setWebcamState("requesting");
-    void env.start().then((ok) => {
-      setWebcamState(ok ? "live" : "denied");
-      window.localStorage.setItem(STORAGE_KEY, ok ? "on" : "off");
-    });
-  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -69,7 +38,46 @@ export default function UnderworldText() {
 
     const { scene, camera, renderer, resize, dispose } = createScene(canvas);
     const webcamEnv = createWebcamEnv();
-    webcamEnvRef.current = webcamEnv;
+
+    // The camera only streams while the tab is visible and the wordmark is
+    // on-screen — hidden tabs keep rendering paused but would otherwise keep
+    // the camera hardware (and its battery cost) running.
+    let cameraDenied = false;
+    let pageVisible = !document.hidden;
+    let inView = true;
+
+    const syncWebcamActivity = () => {
+      if (!pageVisible || !inView) {
+        webcamEnv.stop();
+      } else if (!cameraDenied && webcamEnv.state === "off") {
+        void webcamEnv.start().then((ok) => {
+          if (!ok && webcamEnv.state === "denied") cameraDenied = true;
+          syncWebcamActivity(); // re-check in case things changed mid-prompt
+        });
+      }
+    };
+
+    // Ask for the camera up front — reflections go live as soon as the
+    // permission prompt resolves; on denial the chrome keeps RoomEnvironment.
+    void webcamEnv.start().then((ok) => {
+      if (!ok && webcamEnv.state === "denied") cameraDenied = true;
+      syncWebcamActivity();
+    });
+
+    const onVisibilityChange = () => {
+      pageVisible = !document.hidden;
+      syncWebcamActivity();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    const intersectionObserver = new IntersectionObserver(
+      ([entry]) => {
+        inView = entry.isIntersecting;
+        syncWebcamActivity();
+      },
+      { threshold: 0 }
+    );
+    intersectionObserver.observe(canvas);
 
     let mesh: THREE.Mesh | null = null;
     let cancelled = false;
@@ -88,15 +96,6 @@ export default function UnderworldText() {
       lastGeometrySignature = geometrySignature();
       scene.add(mesh);
     });
-
-    // Re-enable reflections automatically if the user opted in before.
-    if (window.localStorage.getItem(STORAGE_KEY) === "on") {
-      void webcamEnv.start().then((ok) => {
-        if (cancelled) return;
-        setWebcamState(ok ? "live" : "denied");
-        if (!ok) window.localStorage.setItem(STORAGE_KEY, "off");
-      });
-    }
 
     const render = () => {
       raf = requestAnimationFrame(render);
@@ -126,7 +125,6 @@ export default function UnderworldText() {
         material.metalness = p.metalness;
         material.roughness = p.roughness;
         material.envMapIntensity = p.envMapIntensity;
-        material.color.setHex(themeRef.current === "light" ? 0x09090b : 0xfafafa);
 
         // Swap between the live webcam cube map and the studio environment.
         const liveEnvMap = webcamEnv.envMap;
@@ -149,37 +147,19 @@ export default function UnderworldText() {
       cancelled = true;
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", resize);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      intersectionObserver.disconnect();
       webcamEnv.dispose();
-      webcamEnvRef.current = null;
       dispose();
     };
   }, []);
 
-  const webcamLabel = {
-    off: "✦ See yourself in the chrome",
-    requesting: "Summoning your reflection…",
-    live: "● Living chrome — stop camera",
-    denied: "Camera unavailable — try again",
-  }[webcamState];
-
   return (
-    <div className="relative h-full w-full">
-      <canvas
-        ref={canvasRef}
-        aria-label="Underworld"
-        role="img"
-        className="h-full w-full"
-      />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center pb-1">
-        <button
-          type="button"
-          onClick={toggleWebcam}
-          disabled={webcamState === "requesting"}
-          className="pointer-events-auto rounded-full border border-zinc-400/30 bg-zinc-950/50 px-4 py-1.5 text-[11px] font-medium uppercase tracking-[0.2em] text-zinc-300 backdrop-blur-md transition-colors hover:border-zinc-200/50 hover:text-white disabled:cursor-wait disabled:opacity-60"
-        >
-          {webcamLabel}
-        </button>
-      </div>
-    </div>
+    <canvas
+      ref={canvasRef}
+      aria-label="Underworld"
+      role="img"
+      className="h-full w-full"
+    />
   );
 }

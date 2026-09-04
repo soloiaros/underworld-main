@@ -38,8 +38,8 @@ export function createTextGeometry(
 }
 
 /**
- * Builds the chrome wordmark mesh. Colour is driven by the theme and updated
- * from the component.
+ * Builds the chrome wordmark mesh. The near-white base colour stays the same
+ * in both themes — chrome is defined by its reflections, not its albedo.
  */
 export async function createTextMesh(
   text: string,

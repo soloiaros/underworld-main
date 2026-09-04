@@ -7,22 +7,27 @@ export interface WebcamEnvHandle {
   readonly state: WebcamEnvState;
   /** Live cube map for `material.envMap`; null unless state is "live". */
   readonly envMap: THREE.Texture | null;
-  /** Requests the camera and builds the video-driven environment. */
+  /**
+   * Requests the camera and builds the video-driven environment. Resolves
+   * false if the user denied access (state "denied") or the request was
+   * aborted — stopped or disposed while the prompt was open (state "off").
+   */
   start: () => Promise<boolean>;
   /** Stops the camera; materials fall back to the static environment. */
   stop: () => void;
   /**
-   * Re-renders the cube map when the video produced a new frame or a debug
-   * param changed. Call once per frame, before the main render.
+   * Re-renders the cube map when something changed, throttled by `maxFps`
+   * and the motion gate. Call once per frame, before the main render.
    */
   update: (renderer: THREE.WebGLRenderer) => void;
   dispose: () => void;
 }
 
-const CUBE_RESOLUTION = 256;
 const ROOM_RADIUS = 50;
 const SCREEN_DISTANCE = 28;
 const SCREEN_HEIGHT = 30;
+const DIFF_WIDTH = 16;
+const DIFF_HEIGHT = 12;
 
 const screenVertexShader = /* glsl */ `
 varying vec2 vUv;
@@ -76,16 +81,29 @@ void main() {
 /**
  * Turns the front camera into a live chrome environment. The video feeds a
  * "screen" hanging behind the viewer inside a tiny art-directed room, and a
- * cube camera bakes that room into a cube map on every video frame. Assign
- * `envMap` to any metallic material and it reflects the user.
+ * cube camera bakes that room into a cube map. Assign `envMap` to any
+ * metallic material and it reflects the user.
+ *
+ * Cost control: cube updates are capped at `maxFps`, skipped entirely when
+ * the frame-diff motion gate sees a static image, and the camera stream
+ * itself is owned by the caller (stop it when the canvas is hidden).
  */
 export function createWebcamEnv(): WebcamEnvHandle {
   let state: WebcamEnvState = "off";
+  let disposed = false;
   let stream: MediaStream | null = null;
   let video: HTMLVideoElement | null = null;
   let videoTexture: THREE.VideoTexture | null = null;
   let lastVideoTime = -1;
   let lastParamSignature = "";
+  let lastCubeUpdate = 0;
+
+  // Frame-diff scratch for the motion gate — a tiny luma sample of the video.
+  const diffCanvas = document.createElement("canvas");
+  diffCanvas.width = DIFF_WIDTH;
+  diffCanvas.height = DIFF_HEIGHT;
+  const diffCtx = diffCanvas.getContext("2d", { willReadFrequently: true });
+  let diffPrev: Uint8ClampedArray | null = null;
 
   // --- Environment scene ---------------------------------------------------
 
@@ -152,11 +170,34 @@ export function createWebcamEnv(): WebcamEnvHandle {
 
   // --- Cube camera -----------------------------------------------------------
 
-  const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(CUBE_RESOLUTION, {
+  let cubeRenderTarget = new THREE.WebGLCubeRenderTarget(params.webcam.cubeResolution, {
     generateMipmaps: true,
     minFilter: THREE.LinearMipmapLinearFilter,
   });
   const cubeCamera = new THREE.CubeCamera(0.1, ROOM_RADIUS * 2, cubeRenderTarget);
+
+  /**
+   * Mean per-pixel difference vs the previous sample, normalized to 0..1.
+   * Infinity when there is no baseline yet (forces an initial render).
+   */
+  const frameDifference = (source: HTMLVideoElement): number => {
+    if (!diffCtx) return Infinity;
+    diffCtx.drawImage(source, 0, 0, DIFF_WIDTH, DIFF_HEIGHT);
+    const data = diffCtx.getImageData(0, 0, DIFF_WIDTH, DIFF_HEIGHT).data;
+    if (!diffPrev) {
+      diffPrev = new Uint8ClampedArray(data);
+      return Infinity;
+    }
+    let sum = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      sum +=
+        Math.abs(data[i] - diffPrev[i]) +
+        Math.abs(data[i + 1] - diffPrev[i + 1]) +
+        Math.abs(data[i + 2] - diffPrev[i + 2]);
+    }
+    diffPrev.set(data);
+    return sum / ((data.length / 4) * 3 * 255);
+  };
 
   // --- Camera stream ---------------------------------------------------------
 
@@ -164,15 +205,25 @@ export function createWebcamEnv(): WebcamEnvHandle {
     if (state === "requesting" || state === "live") return state === "live";
     state = "requesting";
 
+    let mediaStream: MediaStream;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
+      mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user", width: { ideal: 320 }, height: { ideal: 240 } },
         audio: false,
       });
     } catch {
       state = "denied";
       return false;
     }
+
+    // Stopped or disposed while the permission prompt was open — don't leave
+    // a stream running, and don't confuse the caller with a fake denial.
+    if (disposed || state !== "requesting") {
+      mediaStream.getTracks().forEach((track) => track.stop());
+      if (!disposed) state = "off";
+      return false;
+    }
+    stream = mediaStream;
 
     video = document.createElement("video");
     video.muted = true;
@@ -191,6 +242,8 @@ export function createWebcamEnv(): WebcamEnvHandle {
 
     lastVideoTime = -1;
     lastParamSignature = "";
+    lastCubeUpdate = 0;
+    diffPrev = null;
     state = "live";
     return true;
   };
@@ -205,6 +258,7 @@ export function createWebcamEnv(): WebcamEnvHandle {
     videoTexture?.dispose();
     videoTexture = null;
     screenMaterial.uniforms.uMap.value = placeholderTexture;
+    diffPrev = null;
     state = "off";
   };
 
@@ -212,6 +266,19 @@ export function createWebcamEnv(): WebcamEnvHandle {
     if (state !== "live" || !video || !videoTexture) return;
 
     const p = params.webcam;
+
+    // Recreate the cube target when the resolution knob changes. The new
+    // texture object makes consumers re-bind on their next swap check.
+    if (cubeRenderTarget.width !== p.cubeResolution) {
+      cubeRenderTarget.dispose();
+      cubeRenderTarget = new THREE.WebGLCubeRenderTarget(p.cubeResolution, {
+        generateMipmaps: true,
+        minFilter: THREE.LinearMipmapLinearFilter,
+      });
+      cubeCamera.renderTarget = cubeRenderTarget;
+      lastParamSignature = "";
+    }
+
     screenMaterial.uniforms.uOpacity.value = p.mix;
     screenMaterial.uniforms.uContrast.value = p.contrast;
     screenMaterial.uniforms.uBrightness.value = p.brightness;
@@ -235,17 +302,28 @@ export function createWebcamEnv(): WebcamEnvHandle {
       p.barIntensity,
       p.mirror,
     ].join("|");
-    const hasNewFrame = video.readyState >= 2 && video.currentTime !== lastVideoTime;
-    if (hasNewFrame) lastVideoTime = video.currentTime;
+    const paramsChanged = signature !== lastParamSignature;
 
-    // Skip the six cube renders unless something actually changed.
-    if (hasNewFrame || signature !== lastParamSignature) {
+    // Rate cap — param changes bypass it so the debug GUI stays responsive.
+    const now = performance.now();
+    const dueForUpdate = now - lastCubeUpdate >= 1000 / p.maxFps;
+    if (!dueForUpdate && !paramsChanged) return;
+
+    let shouldRender = paramsChanged;
+    if (!shouldRender && video.readyState >= 2 && video.currentTime !== lastVideoTime) {
+      lastVideoTime = video.currentTime;
+      shouldRender = !p.motionGate || frameDifference(video) > p.motionThreshold;
+    }
+
+    if (shouldRender) {
       lastParamSignature = signature;
+      lastCubeUpdate = now;
       cubeCamera.update(renderer, envScene);
     }
   };
 
   const dispose = () => {
+    disposed = true;
     stop();
     cubeRenderTarget.dispose();
     placeholderTexture.dispose();
