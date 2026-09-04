@@ -207,8 +207,10 @@ export default function Manifesto() {
     }
 
     /* Phones: the scatter would fly off a narrow screen, so the items stack
-       vertically around the screen centre instead, and the whole stack
-       shifts just enough to keep every item fully inside the viewport. */
+       vertically, centred on the screen rather than the phrase, and the
+       whole stack shifts just enough to keep every item fully inside the
+       viewport. The origin stays on the phrase, so items still bloom out of
+       the text before settling into the stack. */
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const spacing = Math.min(190, Math.max(96, vh * 0.22));
@@ -231,7 +233,16 @@ export default function Manifesto() {
     if (y + bottomEdge + shift > vh - MARGIN) {
       shift = vh - MARGIN - (y + bottomEdge);
     }
-    return { sequence: index, x: vw / 2, y: y + shift, offsets };
+    return {
+      sequence: index,
+      x,
+      y,
+      offsets: offsets.map((o) => ({
+        ...o,
+        dx: vw / 2 - x,
+        dy: o.dy + shift,
+      })),
+    };
   }, []);
 
   const open = useCallback(
