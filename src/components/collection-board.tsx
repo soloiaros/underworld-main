@@ -133,6 +133,9 @@ export default function CollectionBoard() {
               alt={piece.alt}
               width={piece.width}
               height={piece.height}
+              /* Mobile: half of the 92vw two-column grid (minus the gap).
+                 Desktop: the collage caps pieces at ~26% of the 78rem board. */
+              sizes="(max-width: 48rem) 44vw, 21rem"
             />
             <span className="collection__caption collection__caption--title">
               {piece.name}, {piece.season}

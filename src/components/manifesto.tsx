@@ -132,6 +132,12 @@ const SEQUENCES: Sequence[] = [
 /* Must outlast the flyout exit transition in globals.css. */
 const EXIT_MS = 500;
 
+/* Flyout photos render at clamp(9rem, 24vw, 16rem) — declaring it keeps the
+   browser on the small srcset candidates instead of the 1080w+ ones the
+   natural `width` props would otherwise produce. The hidden preload set below
+   uses the same value so both resolve to the same optimized URL. */
+const PHOTO_SIZES = "clamp(9rem, 24vw, 16rem)";
+
 /**
  * The brand manifesto: a full-viewport, text-only section. Key phrases are
  * interactive — activating one dims the page and lets supporting notes and
@@ -204,9 +210,16 @@ export default function Manifesto() {
   useEffect(() => {
     if (active === null) return;
 
+    /* Scroll fires per-frame; coalesce remeasures into one per animation
+       frame so an open flyout never re-renders faster than it paints. */
+    let remeasureRaf = 0;
     const remeasure = () => {
-      const origin = measure(active);
-      if (origin) setOverlay(origin);
+      if (remeasureRaf) return;
+      remeasureRaf = requestAnimationFrame(() => {
+        remeasureRaf = 0;
+        const origin = measure(active);
+        if (origin) setOverlay(origin);
+      });
     };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") close();
@@ -222,6 +235,7 @@ export default function Manifesto() {
     window.addEventListener("keydown", handleKeyDown);
     document.addEventListener("pointerdown", handlePointerDown);
     return () => {
+      cancelAnimationFrame(remeasureRaf);
       window.removeEventListener("resize", remeasure);
       window.removeEventListener("scroll", remeasure, true);
       window.removeEventListener("keydown", handleKeyDown);
@@ -274,6 +288,25 @@ export default function Manifesto() {
       aria-label="About Underworld Studios"
     >
       <ChromeStars />
+      {/* Warm the image cache while the section approaches the viewport, so
+          the first flyout opens with its photos already decoded. Rendered at
+          1px instead of display:none — display:none would skip the fetch. */}
+      <div className="manifesto__preload" aria-hidden="true">
+        {SEQUENCES.flatMap((sequence) =>
+          sequence.items
+            .filter((item): item is FlyoutPhoto => item.kind === "photo")
+            .map((item) => (
+              <Image
+                key={item.src}
+                src={item.src}
+                alt=""
+                width={item.width}
+                height={item.height}
+                sizes={PHOTO_SIZES}
+              />
+            ))
+        )}
+      </div>
       <p className="manifesto__text">
         {"Driving the style from the "}
         {renderPhrase(0)}
@@ -318,6 +351,7 @@ export default function Manifesto() {
                   alt={item.alt}
                   width={item.width}
                   height={item.height}
+                  sizes={PHOTO_SIZES}
                   loading="eager"
                 />
               )}

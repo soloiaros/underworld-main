@@ -98,10 +98,19 @@ export default function UnderworldText() {
     const start = performance.now();
 
     /* Pointer in canvas NDC, clamped slightly past the edges so leaning off
-       the hero still parallaxes. Written on events, read in the loop. */
+       the hero still parallaxes. Written on events, read in the loop. The
+       canvas rect is cached — reading it per pointermove would force a layout
+       flush for every mouse event. */
+    let canvasRect = canvas.getBoundingClientRect();
+    const updateCanvasRect = () => {
+      canvasRect = canvas.getBoundingClientRect();
+    };
+    window.addEventListener("resize", updateCanvasRect);
+    window.addEventListener("scroll", updateCanvasRect, { passive: true });
+
     const pointer = { x: 0, y: 0 };
     const onPointerMove = (event: PointerEvent) => {
-      const rect = canvas.getBoundingClientRect();
+      const rect = canvasRect;
       if (rect.width === 0 || rect.height === 0) return;
       const nx = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       const ny = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
@@ -142,9 +151,9 @@ export default function UnderworldText() {
     const render = () => {
       raf = requestAnimationFrame(render);
       // Hero off-screen: skip rendering entirely (the webcam is already
-      // stopped by syncWebcamActivity in that case).
+      // stopped by syncWebcamActivity in that case). Resizing is handled by
+      // the window listener — no per-frame layout reads here.
       if (!inView) return;
-      resize();
 
       const elapsed = reducedMotion.matches
         ? 0
@@ -216,6 +225,8 @@ export default function UnderworldText() {
       cancelled = true;
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", resize);
+      window.removeEventListener("resize", updateCanvasRect);
+      window.removeEventListener("scroll", updateCanvasRect);
       window.removeEventListener("pointermove", onPointerMove);
       document.removeEventListener("visibilitychange", onVisibilityChange);
       intersectionObserver.disconnect();

@@ -50,8 +50,8 @@ export default function ChromeStars() {
 
     const render = () => {
       raf = requestAnimationFrame(render);
+      // Resizing is event-driven (window listener) — no per-frame layout reads.
       if (!inView) return;
-      resize();
 
       const elapsed = reducedMotion.matches
         ? 0

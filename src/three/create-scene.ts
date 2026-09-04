@@ -16,14 +16,15 @@ export interface SceneHandle {
  */
 export function createScene(
   canvas: HTMLCanvasElement,
-  { cameraZ = 8 }: { cameraZ?: number } = {}
+  { cameraZ = 8, maxPixelRatio = 2 }: { cameraZ?: number; maxPixelRatio?: number } = {}
 ): SceneHandle {
   const renderer = new THREE.WebGLRenderer({
     canvas,
     antialias: true,
     alpha: true, // let the mist background show through
+    powerPreference: "high-performance",
   });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxPixelRatio));
 
   const scene = new THREE.Scene();
 
@@ -48,9 +49,17 @@ export function createScene(
 
   scene.add(new THREE.AmbientLight(0xffffff, 0.35));
 
+  /* Event-driven (window resize / mount), never per-frame: reading
+     clientWidth/clientHeight forces layout, so the no-change early-out keeps
+     repeated calls cheap. */
+  let width = 0;
+  let height = 0;
   const resize = () => {
-    const { clientWidth: width, clientHeight: height } = canvas;
-    if (width === 0 || height === 0) return;
+    const { clientWidth: nextWidth, clientHeight: nextHeight } = canvas;
+    if (nextWidth === 0 || nextHeight === 0) return;
+    if (nextWidth === width && nextHeight === height) return;
+    width = nextWidth;
+    height = nextHeight;
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();

@@ -405,6 +405,21 @@ html.menu-open main {
   display: contents;
 }
 
+/* Invisible cache-warmer for the flyout photos (see the component). Kept at
+   1px rather than display:none so the browser actually fetches them. */
+.manifesto__preload {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.manifesto__preload img {
+  width: 1px;
+  height: auto;
+}
+
 /* Shared page dim (manifesto phrases, collection pieces). Everything except
    the active element stacks below it; theme-aware via --background. */
 .dim-backdrop {
