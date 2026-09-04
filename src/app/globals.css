@@ -344,6 +344,19 @@ html.menu-open main {
   padding: 0 1.5rem;
 }
 
+/* The chrome stars canvas, pinned to the section's top-right corner.
+   Decorative: inert to the pointer, and below the dim backdrop (z-index 20)
+   so it fades with the rest of the page when a phrase is active. */
+.chrome-stars {
+  position: absolute;
+  top: clamp(1rem, 4vh, 2.5rem);
+  right: clamp(1rem, 4vw, 2.5rem);
+  z-index: 5;
+  width: clamp(7rem, 18vw, 15rem);
+  aspect-ratio: 1;
+  pointer-events: none;
+}
+
 .manifesto__text {
   max-width: 42rem;
   margin: 0;

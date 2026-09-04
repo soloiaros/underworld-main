@@ -7,8 +7,10 @@ import { createScene } from "@/three/create-scene";
 import { createTextGeometry, createTextMesh, loadFont } from "@/three/load-text";
 import { animateText } from "@/three/animate-text";
 import { createWebcamEnv } from "@/three/webcam-env";
+import { createStarField, type StarFieldHandle } from "@/three/star-field";
 
 const TEXT = "Underworld";
+const STILL_POINTER = { x: 0, y: 0 };
 
 /** Geometry-affecting params — when these change, the mesh is rebuilt. */
 function geometrySignature() {
@@ -25,9 +27,11 @@ function geometrySignature() {
 
 /**
  * Renders the word "Underworld" as animated chrome 3D text using the
- * Brotheric gothic typeface. Sits above the mist background; the chrome is
- * identical in both themes. Asks for the front camera on load so the chrome
- * can reflect the user; falls back to the studio environment if denied.
+ * Brotheric gothic typeface, surrounded by an instanced field of small
+ * chrome stars that react to the pointer. Sits above the mist background;
+ * the chrome is identical in both themes. Asks for the front camera on load
+ * so the chrome can reflect the user; falls back to the studio environment
+ * if denied.
  */
 export default function UnderworldText() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -36,7 +40,12 @@ export default function UnderworldText() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const { scene, camera, renderer, resize, dispose } = createScene(canvas);
+    /* The canvas fills the whole hero section; the camera sits further back
+       so the wordmark keeps its apparent size and the star field gets room
+       to breathe around it. */
+    const { scene, camera, renderer, resize, dispose } = createScene(canvas, {
+      cameraZ: 20,
+    });
     const webcamEnv = createWebcamEnv();
 
     // The camera only streams while the tab is visible and the wordmark is
@@ -80,12 +89,34 @@ export default function UnderworldText() {
     intersectionObserver.observe(canvas);
 
     let mesh: THREE.Mesh | null = null;
+    let starField: StarFieldHandle | null = null;
     let cancelled = false;
     let raf = 0;
     let lastGeometrySignature = "";
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const start = performance.now();
+
+    /* Pointer in canvas NDC, clamped slightly past the edges so leaning off
+       the hero still parallaxes. Written on events, read in the loop. */
+    const pointer = { x: 0, y: 0 };
+    const onPointerMove = (event: PointerEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      const nx = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      const ny = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
+      pointer.x = Math.min(1.25, Math.max(-1.25, nx));
+      pointer.y = Math.min(1.25, Math.max(-1.25, ny));
+    };
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+
+    const fitStarsToWordmark = () => {
+      if (!mesh || !starField) return;
+      mesh.geometry.computeBoundingBox();
+      if (mesh.geometry.boundingBox) {
+        starField.setBounds(mesh.geometry.boundingBox);
+      }
+    };
 
     createTextMesh(TEXT, params.text).then((created) => {
       if (cancelled) {
@@ -95,10 +126,24 @@ export default function UnderworldText() {
       mesh = created;
       lastGeometrySignature = geometrySignature();
       scene.add(mesh);
+      fitStarsToWordmark();
+    });
+
+    createStarField().then((field) => {
+      if (cancelled) {
+        field.dispose();
+        return;
+      }
+      starField = field;
+      scene.add(field.mesh);
+      fitStarsToWordmark();
     });
 
     const render = () => {
       raf = requestAnimationFrame(render);
+      // Hero off-screen: skip rendering entirely (the webcam is already
+      // stopped by syncWebcamActivity in that case).
+      if (!inView) return;
       resize();
 
       const elapsed = reducedMotion.matches
@@ -117,6 +162,7 @@ export default function UnderworldText() {
             const oldGeometry = mesh.geometry;
             mesh.geometry = createTextGeometry(font, TEXT, params.text);
             oldGeometry.dispose();
+            fitStarsToWordmark();
           });
         }
 
@@ -136,6 +182,29 @@ export default function UnderworldText() {
         animateText(mesh, elapsed, p);
       }
 
+      if (starField) {
+        // The same chrome as the wordmark, driven by the same knobs — and
+        // the same living reflections while the webcam is live.
+        const chrome = params.text;
+        const starMaterial = starField.material;
+        starMaterial.metalness = chrome.metalness;
+        starMaterial.roughness = chrome.roughness;
+        starMaterial.envMapIntensity = chrome.envMapIntensity;
+
+        const liveEnvMap = webcamEnv.envMap;
+        if (starMaterial.envMap !== liveEnvMap) {
+          starMaterial.envMap = liveEnvMap;
+          starMaterial.needsUpdate = true;
+        }
+
+        starField.update(
+          elapsed,
+          reducedMotion.matches ? STILL_POINTER : pointer,
+          camera,
+          params.starField
+        );
+      }
+
       webcamEnv.update(renderer);
       renderer.render(scene, camera);
     };
@@ -147,8 +216,10 @@ export default function UnderworldText() {
       cancelled = true;
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", resize);
+      window.removeEventListener("pointermove", onPointerMove);
       document.removeEventListener("visibilitychange", onVisibilityChange);
       intersectionObserver.disconnect();
+      starField?.dispose();
       webcamEnv.dispose();
       dispose();
     };

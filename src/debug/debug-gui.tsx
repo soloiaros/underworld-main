@@ -52,6 +52,33 @@ function addTextFolder(gui: GUI) {
   folder.open();
 }
 
+/* The stars share the wordmark's chrome — metalness/roughness/reflection
+   live under Text > Chrome and drive both models. */
+function addStarsFolder(gui: GUI) {
+  const folder = gui.addFolder("Stars");
+  const { stars } = params;
+
+  folder.add(stars, "scale", 0.5, 8, 0.05).name("Scale");
+  folder.add(stars, "floatSpeed", 0, 3, 0.01).name("Float speed");
+  folder.add(stars, "floatAmplitude", 0, 1, 0.01).name("Float amplitude");
+  folder.add(stars, "rotateSpeed", 0, 1.5, 0.01).name("Rotate speed");
+  folder.add(stars, "tiltAmount", 0, 0.5, 0.005).name("Tilt amount");
+}
+
+/* The hero star field shares the wordmark's chrome (Text > Chrome). */
+function addStarFieldFolder(gui: GUI) {
+  const folder = gui.addFolder("Star field");
+  const { starField } = params;
+
+  folder.add(starField, "count", 8, 160, 1).name("Count");
+  folder.add(starField, "size", 0.05, 0.6, 0.005).name("Size");
+  folder.add(starField, "spinSpeed", 0, 2, 0.01).name("Spin speed");
+  folder.add(starField, "bobAmount", 0, 0.5, 0.005).name("Bob amount");
+  folder.add(starField, "parallax", 0, 0.5, 0.005).name("Mouse parallax");
+  folder.add(starField, "repelRadius", 0.5, 6, 0.05).name("Repel radius");
+  folder.add(starField, "repelStrength", 0, 2, 0.01).name("Repel strength");
+}
+
 function addWebcamFolder(gui: GUI) {
   const folder = gui.addFolder("Webcam reflections");
   const { webcam } = params;
@@ -110,6 +137,8 @@ export default function DebugGui() {
 
       addMistFolder(gui);
       addTextFolder(gui);
+      addStarsFolder(gui);
+      addStarFieldFolder(gui);
       addWebcamFolder(gui);
 
       gui

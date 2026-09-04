@@ -41,6 +41,39 @@ export const textParams = {
 
 export type TextParams = typeof textParams;
 
+/**
+ * Scale and motion knobs for the chrome stars in the manifesto's top-right
+ * corner. The chrome material itself is shared with the wordmark — tweak it
+ * via `textParams` (Text > Chrome in the debug panel).
+ */
+export const starsParams = {
+  "scale": 3.2,
+  "floatSpeed": 0.8,
+  "floatAmplitude": 0.15,
+  "rotateSpeed": 0.3,
+  "tiltAmount": 0.06
+}
+
+export type StarsParams = typeof starsParams;
+
+/**
+ * The instanced star field surrounding the hero wordmark: layout, motion and
+ * pointer reactivity. The chrome is shared with `textParams`.
+ */
+
+
+export const starFieldParams = {
+  "count": 19,
+  "size": 0.6,
+  "spinSpeed": 1.02,
+  "bobAmount": 0.09,
+  "parallax": 0.18,
+  "repelRadius": 2.6,
+  "repelStrength": 0.7
+}
+
+export type StarFieldParams = typeof starFieldParams;
+
 
 
 /**
@@ -68,4 +101,6 @@ export const params = {
   mist: mistParams,
   text: textParams,
   webcam: webcamParams,
+  stars: starsParams,
+  starField: starFieldParams,
 };

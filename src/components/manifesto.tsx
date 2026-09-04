@@ -8,6 +8,7 @@ import {
   useState,
   type CSSProperties,
 } from "react";
+import ChromeStars from "./chrome-stars";
 
 interface FlyoutNote {
   kind: "note";
@@ -272,6 +273,7 @@ export default function Manifesto() {
       data-open={active !== null}
       aria-label="About Underworld Studios"
     >
+      <ChromeStars />
       <p className="manifesto__text">
         {"Driving the style from the "}
         {renderPhrase(0)}

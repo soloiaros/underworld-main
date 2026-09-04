@@ -12,8 +12,12 @@ export interface SceneHandle {
 /**
  * Creates the renderer, scene, camera and lights for the 3D wordmark.
  * Owns all Three.js boilerplate so the component stays declarative.
+ * `cameraZ` pulls the camera back when a canvas shows more world than logo.
  */
-export function createScene(canvas: HTMLCanvasElement): SceneHandle {
+export function createScene(
+  canvas: HTMLCanvasElement,
+  { cameraZ = 8 }: { cameraZ?: number } = {}
+): SceneHandle {
   const renderer = new THREE.WebGLRenderer({
     canvas,
     antialias: true,
@@ -24,7 +28,7 @@ export function createScene(canvas: HTMLCanvasElement): SceneHandle {
   const scene = new THREE.Scene();
 
   const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-  camera.position.set(0, 0, 8);
+  camera.position.set(0, 0, cameraZ);
 
   // Image-based lighting — chrome is pure reflection, so without an
   // environment map a fully metallic material renders almost black.
