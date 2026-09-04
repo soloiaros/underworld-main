@@ -27,6 +27,17 @@ function addMistFolder(gui: GUI) {
   folder.open();
 }
 
+function addTextFolder(gui: GUI) {
+  const folder = gui.addFolder("Text");
+  const { text } = params;
+
+  folder.add(text, "floatSpeed", 0, 3, 0.01).name("Float speed");
+  folder.add(text, "floatAmplitude", 0, 1, 0.01).name("Float amplitude");
+  folder.add(text, "rotateSpeed", 0, 1.5, 0.01).name("Rotate speed");
+  folder.add(text, "tiltAmount", 0, 0.5, 0.005).name("Tilt amount");
+  folder.open();
+}
+
 export default function DebugGui() {
   const enabled = useDebug();
   const { theme, setTheme } = useTheme();
@@ -65,6 +76,7 @@ export default function DebugGui() {
       gui.add(themeProxy, "theme", ["dark", "light"]).name("Theme").listen();
 
       addMistFolder(gui);
+      addTextFolder(gui);
 
       gui
         .add(

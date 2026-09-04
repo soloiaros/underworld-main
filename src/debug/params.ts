@@ -21,6 +21,17 @@ export const mistParams = {
 
 export type MistParams = typeof mistParams;
 
+/** Motion knobs for the 3D "Underworld" wordmark. */
+export const textParams = {
+  floatSpeed: 0.9,
+  floatAmplitude: 0.18,
+  rotateSpeed: 0,
+  tiltAmount: 0.08,
+};
+
+export type TextParams = typeof textParams;
+
 export const params = {
   mist: mistParams,
+  text: textParams,
 };
