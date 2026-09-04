@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { ThemeProvider } from "@/components/theme-provider";
+import MistBackground from "@/components/mist-background";
+import ThemeToggle from "@/components/theme-toggle";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -8,7 +11,13 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <ThemeProvider>
+          <MistBackground />
+          {children}
+          <ThemeToggle />
+        </ThemeProvider>
+      </body>
     </html>
   );
 }
