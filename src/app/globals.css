@@ -31,6 +31,9 @@ html.light {
 body {
   background: var(--background);
   color: var(--foreground);
+  /* Sections sized at 100vw would otherwise open a horizontal scrollbar
+     whenever a vertical one is present. */
+  overflow-x: clip;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -282,8 +285,9 @@ body {
 .site-menu__link {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   height: 100%;
-  padding: 0 1.5rem 0 2rem;
+  padding: 0 1.5rem;
   color: var(--background);
   font-size: 0.8rem;
   letter-spacing: 0.1em;
@@ -293,7 +297,7 @@ body {
 }
 
 .site-menu__link:hover {
-  transform: translateX(0.35rem);
+  transform: translateX(-0.35rem);
 }
 
 /* On mobile, every row slides all the way to the right edge, so the menu
@@ -321,6 +325,160 @@ html.menu-open main {
   .site-menu,
   .site-menu__item,
   .site-menu-button__line {
+    transition-delay: 0s !important;
+    transition-duration: 0.01s !important;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Manifesto                                                                  */
+/* -------------------------------------------------------------------------- */
+
+.manifesto {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+  padding: 0 1.5rem;
+}
+
+.manifesto__text {
+  max-width: 42rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: clamp(1.2rem, 2.4vw, 1.8rem);
+  line-height: 1.65;
+  text-align: center;
+  transition: color 0.4s ease;
+}
+
+.manifesto__phrase {
+  padding: 0;
+  color: var(--foreground);
+  font: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.28em;
+  transition: opacity 0.3s ease;
+}
+
+.manifesto__phrase:hover {
+  text-decoration-style: solid;
+}
+
+/* While a phrase is active, the rest of the paragraph falls back. The active
+   phrase itself rises above the dimming backdrop. */
+.manifesto[data-open="true"] .manifesto__text {
+  color: color-mix(in srgb, var(--muted) 45%, transparent);
+}
+
+.manifesto[data-open="true"] .manifesto__phrase {
+  opacity: 0.4;
+}
+
+.manifesto[data-open="true"] .manifesto__phrase[data-active="true"] {
+  position: relative;
+  z-index: 30;
+  opacity: 1;
+}
+
+.manifesto__flyout {
+  display: contents;
+}
+
+/* Dims the whole page (except the active phrase and the flyout items, which
+   stack above it). Theme-aware: dims towards the background colour. */
+.manifesto__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: var(--background);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.45s ease;
+}
+
+.manifesto__flyout[data-show="true"] .manifesto__backdrop {
+  opacity: 0.82;
+}
+
+/* Items are born at the phrase's centre (--ox/--oy) and fly out to their
+   per-item offset (--dx/--dy/--rot), staggered by --delay. */
+.manifesto__flyout-item {
+  position: fixed;
+  z-index: 40;
+  left: var(--ox);
+  top: var(--oy);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.15);
+  transition:
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.3s ease;
+  transition-delay: var(--delay);
+  will-change: transform;
+}
+
+.manifesto__flyout[data-show="true"] .manifesto__flyout-item {
+  opacity: 1;
+  transform:
+    translate(-50%, -50%)
+    translate(var(--dx), var(--dy))
+    rotate(var(--rot))
+    scale(1);
+}
+
+/* Sharper, faster trip back into the phrase. */
+.manifesto__flyout[data-show="false"] .manifesto__flyout-item {
+  transition-duration: 0.4s, 0.25s;
+  transition-timing-function: cubic-bezier(0.76, 0, 0.24, 1), ease;
+  transition-delay: 0s;
+}
+
+.manifesto__note {
+  margin: 0;
+  padding: 0.65rem 1rem;
+  color: var(--background);
+  background: var(--foreground);
+  box-shadow: 0 1.5rem 3rem rgb(0 0 0 / 0.35);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.manifesto__note strong {
+  display: block;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+}
+
+.manifesto__note span {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.manifesto__photo {
+  display: block;
+  width: clamp(9rem, 24vw, 16rem);
+  height: auto;
+  filter: grayscale(1);
+  box-shadow: 0 1.5rem 3rem rgb(0 0 0 / 0.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .manifesto__text,
+  .manifesto__phrase,
+  .manifesto__backdrop,
+  .manifesto__flyout-item {
     transition-delay: 0s !important;
     transition-duration: 0.01s !important;
   }
