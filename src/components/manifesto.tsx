@@ -38,7 +38,8 @@ interface Sequence {
 }
 
 /* dx/dy are pixel offsets from the phrase centre at a 1280px-wide viewport;
-   they scale down on smaller screens (see `scale` in measure()). */
+   they scale down on smaller screens, and on phones the scatter becomes a
+   centred vertical stack instead (see measure()). */
 const SEQUENCES: Sequence[] = [
   {
     phrase: "outskirts of London",
@@ -138,6 +139,37 @@ const EXIT_MS = 500;
    uses the same value so both resolve to the same optimized URL. */
 const PHOTO_SIZES = "clamp(9rem, 24vw, 16rem)";
 
+/* Rendered half-height of a flyout photo in px, mirroring the CSS width
+   clamps (including the short-screen rule) — measure() uses it to keep the
+   mobile stack fully inside the viewport. The +8 absorbs the drop shadow. */
+function photoHalfHeight(item: FlyoutPhoto) {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const renderedWidth =
+    vh <= 512 // 32rem short-screen rule in globals.css
+      ? Math.min(256, Math.max(96, vh * 0.22))
+      : Math.min(256, Math.max(144, vw * 0.24));
+  return (renderedWidth * item.height) / item.width / 2 + 8;
+}
+
+/* Estimated half-height of a note card (padding + two text lines + shadow). */
+const NOTE_HALF_HEIGHT = 40;
+
+interface FlyoutOffset {
+  dx: number;
+  dy: number;
+  rot: number;
+}
+
+interface OverlayOrigin {
+  sequence: number;
+  x: number;
+  y: number;
+  /** Final per-item offsets in px — already scaled (desktop) or stacked and
+      clamped into the viewport (mobile). */
+  offsets: FlyoutOffset[];
+}
+
 /**
  * The brand manifesto: a full-viewport, text-only section. Key phrases are
  * interactive — activating one dims the page and lets supporting notes and
@@ -145,26 +177,61 @@ const PHOTO_SIZES = "clamp(9rem, 24vw, 16rem)";
  */
 export default function Manifesto() {
   const [active, setActive] = useState<number | null>(null);
-  const [overlay, setOverlay] = useState<{
-    sequence: number;
-    x: number;
-    y: number;
-    scale: number;
-  } | null>(null);
+  const [overlay, setOverlay] = useState<OverlayOrigin | null>(null);
   const [shown, setShown] = useState(false);
   const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const closeTimer = useRef<number | null>(null);
 
-  const measure = useCallback((index: number) => {
+  const measure = useCallback((index: number): OverlayOrigin | null => {
     const button = buttonRefs.current[index];
     if (!button) return null;
     const rect = button.getBoundingClientRect();
-    return {
-      sequence: index,
-      x: rect.left + rect.width / 2,
-      y: rect.top + rect.height / 2,
-      scale: Math.min(1, Math.max(0.55, window.innerWidth / 1280)),
-    };
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    const items = SEQUENCES[index].items;
+
+    /* Desktop: the art-directed scatter around the phrase, scaled down with
+       the viewport (never below 0.55 — the offsets were tuned at 1280px). */
+    if (!window.matchMedia("(max-width: 48rem)").matches) {
+      const scale = Math.min(1, Math.max(0.55, window.innerWidth / 1280));
+      return {
+        sequence: index,
+        x,
+        y,
+        offsets: items.map((item) => ({
+          dx: item.dx * scale,
+          dy: item.dy * scale,
+          rot: item.rot,
+        })),
+      };
+    }
+
+    /* Phones: the scatter would fly off a narrow screen, so the items stack
+       vertically around the screen centre instead, and the whole stack
+       shifts just enough to keep every item fully inside the viewport. */
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const spacing = Math.min(190, Math.max(96, vh * 0.22));
+    const MARGIN = 56;
+    const offsets = items.map((item, i) => ({
+      dx: 0,
+      dy: (i - (items.length - 1) / 2) * spacing,
+      rot: item.rot * 0.6, // subtler tilt — rotation inflates the bounding box
+    }));
+    const edges = offsets.map((o, i) => {
+      const item = items[i];
+      const half =
+        item.kind === "photo" ? photoHalfHeight(item) : NOTE_HALF_HEIGHT;
+      return { top: o.dy - half, bottom: o.dy + half };
+    });
+    const topEdge = Math.min(...edges.map((e) => e.top));
+    const bottomEdge = Math.max(...edges.map((e) => e.bottom));
+    let shift = 0;
+    if (y + topEdge + shift < MARGIN) shift = MARGIN - (y + topEdge);
+    if (y + bottomEdge + shift > vh - MARGIN) {
+      shift = vh - MARGIN - (y + bottomEdge);
+    }
+    return { sequence: index, x: vw / 2, y: y + shift, offsets };
   }, []);
 
   const open = useCallback(
@@ -332,9 +399,9 @@ export default function Manifesto() {
                 {
                   "--ox": `${overlay.x}px`,
                   "--oy": `${overlay.y}px`,
-                  "--dx": `${item.dx * overlay.scale}px`,
-                  "--dy": `${item.dy * overlay.scale}px`,
-                  "--rot": `${item.rot}deg`,
+                  "--dx": `${overlay.offsets[i].dx}px`,
+                  "--dy": `${overlay.offsets[i].dy}px`,
+                  "--rot": `${overlay.offsets[i].rot}deg`,
                   "--delay": `${i * 70}ms`,
                 } as CSSProperties
               }

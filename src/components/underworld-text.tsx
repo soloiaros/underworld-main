@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import type * as THREE from "three";
 import { params } from "@/debug/params";
 import { beginAsset, finishAsset, trackAsset } from "@/lib/loading";
+import { MAX_PIXEL_RATIO } from "@/lib/device";
 import { createScene } from "@/three/create-scene";
 import { createTextGeometry, createTextMesh, loadFont } from "@/three/load-text";
 import { animateText } from "@/three/animate-text";
@@ -52,7 +53,10 @@ export default function UnderworldText() {
        to breathe around it. */
     let handle: ReturnType<typeof createScene>;
     try {
-      handle = createScene(canvas, { cameraZ: 20 });
+      handle = createScene(canvas, {
+        cameraZ: 20,
+        maxPixelRatio: MAX_PIXEL_RATIO,
+      });
     } catch (error) {
       /* No WebGL (old device, disabled GPU) — the mist background and the
          page content still carry the visit. */
@@ -73,7 +77,7 @@ export default function UnderworldText() {
     let inView = true;
 
     const syncWebcamActivity = () => {
-      if (!pageVisible || !inView) {
+      if (!pageVisible || !inView || !params.webcam.enabled) {
         webcamEnv.stop();
       } else if (!cameraDenied && webcamEnv.state === "off") {
         void webcamEnv.start().then((ok) => {
@@ -83,12 +87,16 @@ export default function UnderworldText() {
       }
     };
 
-    // Ask for the camera up front — reflections go live as soon as the
-    // permission prompt resolves; on denial the chrome keeps RoomEnvironment.
-    void webcamEnv.start().then((ok) => {
-      if (!ok && webcamEnv.state === "denied") cameraDenied = true;
-      syncWebcamActivity();
-    });
+    /* Ask for the camera up front — reflections go live as soon as the
+       permission prompt resolves; on denial the chrome keeps RoomEnvironment.
+       Mobile opts out via params.webcam.enabled: no prompt on arrival, no
+       camera battery cost, and the studio environment is the designed look. */
+    if (params.webcam.enabled) {
+      void webcamEnv.start().then((ok) => {
+        if (!ok && webcamEnv.state === "denied") cameraDenied = true;
+        syncWebcamActivity();
+      });
+    }
 
     const onVisibilityChange = () => {
       pageVisible = !document.hidden;
@@ -122,7 +130,7 @@ export default function UnderworldText() {
     const updateCanvasRect = () => {
       canvasRect = canvas.getBoundingClientRect();
     };
-    window.addEventListener("resize", updateCanvasRect);
+    /* Resize is handled by onResize below (it also re-fits the wordmark). */
     window.addEventListener("scroll", updateCanvasRect, { passive: true });
 
     const pointer = { x: 0, y: 0 };
@@ -136,11 +144,29 @@ export default function UnderworldText() {
     };
     window.addEventListener("pointermove", onPointerMove, { passive: true });
 
-    const fitStarsToWordmark = () => {
-      if (!mesh || !starField) return;
+    /* Scales the wordmark so it always fits the viewport's visible width —
+       portrait phones included — with an 8% margin, then re-fits the star
+       shell around the scaled bounds. Runs on load, on geometry rebuilds and
+       on resize; camera.aspect alone decides the fit, so no element of the
+       hero is ever cut off. (fov is in degrees: half-angle = fov * PI / 360.)
+       The geometry is centred on the origin, so scaling its box's min/max
+       about zero yields the on-screen bounds. */
+    const fitWordmarkToView = () => {
+      if (!mesh) return;
       mesh.geometry.computeBoundingBox();
-      if (mesh.geometry.boundingBox) {
-        starField.setBounds(mesh.geometry.boundingBox);
+      const box = mesh.geometry.boundingBox;
+      if (!box) return;
+      const wordWidth = Math.max(box.max.x - box.min.x, 1e-4);
+      const halfH = Math.tan((camera.fov * Math.PI) / 360) * camera.position.z;
+      const visibleWidth = 2 * halfH * camera.aspect;
+      const scale = Math.min(1, (visibleWidth * 0.92) / wordWidth);
+      mesh.scale.setScalar(scale);
+
+      if (starField) {
+        const scaledBox = box.clone();
+        scaledBox.min.multiplyScalar(scale);
+        scaledBox.max.multiplyScalar(scale);
+        starField.setBounds(scaledBox);
       }
     };
 
@@ -153,7 +179,7 @@ export default function UnderworldText() {
         mesh = created;
         lastGeometrySignature = geometrySignature();
         scene.add(mesh);
-        fitStarsToWordmark();
+        fitWordmarkToView();
       })
       .catch(() => {
         /* Settled by trackAsset — the hero simply stays without a wordmark. */
@@ -167,7 +193,7 @@ export default function UnderworldText() {
         }
         starField = field;
         scene.add(field.mesh);
-        fitStarsToWordmark();
+        fitWordmarkToView();
       })
       .catch(() => {
         /* Settled by trackAsset — the hero simply stays without stars. */
@@ -209,7 +235,7 @@ export default function UnderworldText() {
             const oldGeometry = mesh.geometry;
             mesh.geometry = createTextGeometry(font, TEXT, params.text);
             oldGeometry.dispose();
-            fitStarsToWordmark();
+            fitWordmarkToView();
           });
         }
 
@@ -258,13 +284,18 @@ export default function UnderworldText() {
     };
     render();
 
-    window.addEventListener("resize", resize);
+    /* Aspect changes with the viewport, so the wordmark re-fits on resize. */
+    const onResize = () => {
+      resize();
+      updateCanvasRect();
+      fitWordmarkToView();
+    };
+    window.addEventListener("resize", onResize);
 
     return () => {
       cancelled = true;
       cancelAnimationFrame(raf);
-      window.removeEventListener("resize", resize);
-      window.removeEventListener("resize", updateCanvasRect);
+      window.removeEventListener("resize", onResize);
       window.removeEventListener("scroll", updateCanvasRect);
       window.removeEventListener("pointermove", onPointerMove);
       document.removeEventListener("visibilitychange", onVisibilityChange);

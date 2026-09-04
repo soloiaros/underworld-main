@@ -413,6 +413,9 @@ html.menu-open main {
   justify-content: center;
   width: 100vw;
   height: 100vh;
+  /* Small-viewport height: 100vh on mobile includes the area behind the
+     browser chrome, so vh-sized sections would overflow the visible screen. */
+  height: 100svh;
   padding: 0 1.5rem;
 }
 
@@ -574,6 +577,14 @@ html.menu-open main {
   box-shadow: 0 1.5rem 3rem rgb(0 0 0 / 0.4);
 }
 
+/* Short viewports (landscape phones): shrink the flyout photos so the
+   vertical stack fits — photoHalfHeight() in the component mirrors this. */
+@media (max-height: 32rem) {
+  .manifesto__photo {
+    width: clamp(6rem, 22vh, 16rem);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .manifesto__text,
   .manifesto__phrase,
@@ -650,6 +661,7 @@ html.menu-open main {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  min-height: 100svh;
   padding: 4rem 1.5rem;
 }
 

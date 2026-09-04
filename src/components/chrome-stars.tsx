@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { params } from "@/debug/params";
 import { beginAsset, finishAsset, trackAsset } from "@/lib/loading";
+import { MAX_PIXEL_RATIO } from "@/lib/device";
 import { createScene } from "@/three/create-scene";
 import { loadChromeStars, disposeChromeStars } from "@/three/load-stars";
 import { animateText } from "@/three/animate-text";
@@ -25,7 +26,7 @@ export default function ChromeStars() {
 
     let handle: ReturnType<typeof createScene>;
     try {
-      handle = createScene(canvas);
+      handle = createScene(canvas, { maxPixelRatio: MAX_PIXEL_RATIO });
     } catch (error) {
       /* No WebGL — the corner decoration is optional; the section stays. */
       console.warn("Chrome stars scene unavailable", error);

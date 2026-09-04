@@ -1,3 +1,5 @@
+import { isMobile } from "@/lib/device";
+
 /**
  * Mutable debug params. Add a group here, then a folder in `debug-gui.tsx`.
  * The mist shader reads `params.mist` every frame, so sliders take effect live.
@@ -83,6 +85,7 @@ export type StarFieldParams = typeof starFieldParams;
  */
 
 export const webcamParams = {
+  "enabled": true,
   "mix": 0.27,
   "contrast": 1.54,
   "brightness": -0.12,
@@ -105,3 +108,17 @@ export const params = {
   stars: starsParams,
   starField: starFieldParams,
 };
+
+/**
+ * Mobile overrides, applied once at import. Touch hardware pays for every
+ * fragment and every sensor, so the light set trims the fullscreen shader,
+ * the star count and the renderer DPR (see `device.ts`), and skips the
+ * webcam permission prompt entirely — the chrome falls back to the studio
+ * environment, which is the designed look anyway.
+ */
+if (isMobile) {
+  mistParams.resolution = 0.2;
+  starFieldParams.count = 12;
+  starFieldParams.size = 0.5;
+  webcamParams.enabled = false;
+}

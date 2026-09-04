@@ -83,6 +83,8 @@ function addWebcamFolder(gui: GUI) {
   const folder = gui.addFolder("Webcam reflections");
   const { webcam } = params;
 
+  /* Applies on the next visibility/scroll sync — off by default on mobile. */
+  folder.add(webcam, "enabled").name("Enabled");
   folder.add(webcam, "mix", 0, 1, 0.01).name("Webcam mix");
   folder.add(webcam, "contrast", 0.5, 2.5, 0.01).name("Contrast");
   folder.add(webcam, "brightness", -0.3, 0.3, 0.005).name("Brightness");
