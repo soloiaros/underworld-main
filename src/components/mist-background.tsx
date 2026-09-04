@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { params } from "@/debug/params";
 import { useTheme } from "./theme-provider";
 
 const VERTEX_SHADER = `
@@ -13,14 +14,25 @@ void main() {
 }
 `;
 
-// Fractal value noise — the cheapest way to get soft, rolling mist.
 const FRAGMENT_SHADER = `
 precision mediump float;
 
 varying vec2 v_uv;
 uniform vec2 u_resolution;
 uniform float u_time;
-uniform float u_invert; // 0.0 = dark mist on black, 1.0 = inverted for light theme
+uniform float u_invert;
+uniform float u_speed;
+uniform float u_noiseScale;
+uniform float u_warpScale;
+uniform float u_warpAmount;
+uniform float u_driftX;
+uniform float u_driftY;
+uniform float u_amplitude;
+uniform float u_smoothMin;
+uniform float u_smoothMax;
+uniform float u_modulation;
+uniform float u_baseDark;
+uniform float u_baseLight;
 
 float hash(vec2 p) {
   p = fract(p * vec2(234.34, 435.345));
@@ -54,31 +66,28 @@ void main() {
   vec2 uv = v_uv;
   uv.x *= u_resolution.x / u_resolution.y;
 
-  float t = u_time * 0.05;
+  float t = u_time * u_speed;
 
-  // Domain-warped fbm for slow, billowing flow.
-  vec2 drift = vec2(t * 0.6, t * 0.15);
+  vec2 drift = vec2(t * u_driftX, t * u_driftY);
   vec2 warp = vec2(
-    fbm(uv * 1.4 + drift),
-    fbm(uv * 1.4 + vec2(5.2, 1.3) - drift)
+    fbm(uv * u_warpScale + drift),
+    fbm(uv * u_warpScale + vec2(5.2, 1.3) - drift)
   );
-  float mist = fbm(uv * 1.8 + warp * 1.6 + drift * 0.5);
+  float mist = fbm(uv * u_noiseScale + warp * u_warpAmount + drift * 0.5);
 
-  // Shape into soft horizontal bands and keep it very subtle.
-  mist = smoothstep(0.25, 1.0, mist) * 0.16;
-  mist *= 0.6 + 0.4 * noise(vec2(uv.y * 2.0 - t, t * 0.3));
+  float lo = min(u_smoothMin, u_smoothMax);
+  float hi = max(u_smoothMin, u_smoothMax);
+  mist = smoothstep(lo, hi, mist) * u_amplitude;
+  mist *= (1.0 - u_modulation) + u_modulation * noise(vec2(uv.y * 2.0 - t, t * 0.3));
 
-  float base = mix(0.035, 0.965, u_invert);
+  float base = mix(u_baseDark, u_baseLight, u_invert);
   float luma = base + mix(mist, -mist, u_invert);
 
-  // Dither to hide banding in the very dark gradient.
   luma += (hash(v_uv * u_resolution + u_time) - 0.5) / 255.0;
 
   gl_FragColor = vec4(vec3(luma), 1.0);
 }
 `;
-
-const SCALE = 0.25; // render at 1/4 resolution — plenty for soft mist
 
 function createProgram(gl: WebGLRenderingContext) {
   const compile = (type: number, source: string) => {
@@ -110,13 +119,16 @@ function createProgram(gl: WebGLRenderingContext) {
   return program;
 }
 
+function loc(gl: WebGLRenderingContext, program: WebGLProgram, name: string) {
+  return gl.getUniformLocation(program, name);
+}
+
 export default function MistBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { theme } = useTheme();
   const invertRef = useRef(0);
   const currentInvertRef = useRef(0);
 
-  // Target value for the shader; lerped towards in the render loop.
   useEffect(() => {
     invertRef.current = theme === "light" ? 1 : 0;
   }, [theme]);
@@ -143,15 +155,30 @@ export default function MistBackground() {
     gl.enableVertexAttribArray(position);
     gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
 
-    const uResolution = gl.getUniformLocation(program, "u_resolution");
-    const uTime = gl.getUniformLocation(program, "u_time");
-    const uInvert = gl.getUniformLocation(program, "u_invert");
+    const uniforms = {
+      resolution: loc(gl, program, "u_resolution"),
+      time: loc(gl, program, "u_time"),
+      invert: loc(gl, program, "u_invert"),
+      speed: loc(gl, program, "u_speed"),
+      noiseScale: loc(gl, program, "u_noiseScale"),
+      warpScale: loc(gl, program, "u_warpScale"),
+      warpAmount: loc(gl, program, "u_warpAmount"),
+      driftX: loc(gl, program, "u_driftX"),
+      driftY: loc(gl, program, "u_driftY"),
+      amplitude: loc(gl, program, "u_amplitude"),
+      smoothMin: loc(gl, program, "u_smoothMin"),
+      smoothMax: loc(gl, program, "u_smoothMax"),
+      modulation: loc(gl, program, "u_modulation"),
+      baseDark: loc(gl, program, "u_baseDark"),
+      baseLight: loc(gl, program, "u_baseLight"),
+    };
 
     let width = 0;
     let height = 0;
     const resize = () => {
-      const nextWidth = Math.max(1, Math.floor(canvas.clientWidth * SCALE));
-      const nextHeight = Math.max(1, Math.floor(canvas.clientHeight * SCALE));
+      const scale = params.mist.resolution;
+      const nextWidth = Math.max(1, Math.floor(canvas.clientWidth * scale));
+      const nextHeight = Math.max(1, Math.floor(canvas.clientHeight * scale));
       if (nextWidth === width && nextHeight === height) return;
       width = nextWidth;
       height = nextHeight;
@@ -168,18 +195,29 @@ export default function MistBackground() {
 
     const render = () => {
       raf = requestAnimationFrame(render);
-      if (reducedMotion.matches) return; // render one static frame instead
-
       resize();
-      const time = (performance.now() - start) / 1000;
 
-      // Smooth the theme inversion instead of snapping.
+      const mist = params.mist;
+      const time = reducedMotion.matches ? 0 : (performance.now() - start) / 1000;
+
       currentInvertRef.current +=
-        (invertRef.current - currentInvertRef.current) * 0.08;
+        (invertRef.current - currentInvertRef.current) * mist.invertLerp;
 
-      gl.uniform2f(uResolution, width, height);
-      gl.uniform1f(uTime, time);
-      gl.uniform1f(uInvert, currentInvertRef.current);
+      gl.uniform2f(uniforms.resolution, width, height);
+      gl.uniform1f(uniforms.time, time);
+      gl.uniform1f(uniforms.invert, currentInvertRef.current);
+      gl.uniform1f(uniforms.speed, mist.speed);
+      gl.uniform1f(uniforms.noiseScale, mist.noiseScale);
+      gl.uniform1f(uniforms.warpScale, mist.warpScale);
+      gl.uniform1f(uniforms.warpAmount, mist.warpAmount);
+      gl.uniform1f(uniforms.driftX, mist.driftX);
+      gl.uniform1f(uniforms.driftY, mist.driftY);
+      gl.uniform1f(uniforms.amplitude, mist.amplitude);
+      gl.uniform1f(uniforms.smoothMin, mist.smoothMin);
+      gl.uniform1f(uniforms.smoothMax, mist.smoothMax);
+      gl.uniform1f(uniforms.modulation, mist.modulation);
+      gl.uniform1f(uniforms.baseDark, mist.baseDark);
+      gl.uniform1f(uniforms.baseLight, mist.baseLight);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
     };
     render();

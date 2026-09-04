@@ -1,0 +1,88 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import type GUI from "lil-gui";
+import { useTheme } from "@/components/theme-provider";
+import { params } from "./params";
+import { useDebug } from "./use-debug";
+
+function addMistFolder(gui: GUI) {
+  const folder = gui.addFolder("Mist");
+  const { mist } = params;
+
+  folder.add(mist, "speed", 0, 0.3, 0.001).name("Speed");
+  folder.add(mist, "amplitude", 0, 0.6, 0.005).name("Amplitude");
+  folder.add(mist, "noiseScale", 0.2, 6, 0.01).name("Noise scale");
+  folder.add(mist, "warpScale", 0.2, 6, 0.01).name("Warp scale");
+  folder.add(mist, "warpAmount", 0, 4, 0.01).name("Warp amount");
+  folder.add(mist, "driftX", -2, 2, 0.01).name("Drift X");
+  folder.add(mist, "driftY", -2, 2, 0.01).name("Drift Y");
+  folder.add(mist, "smoothMin", 0, 1, 0.01).name("Threshold min");
+  folder.add(mist, "smoothMax", 0, 1, 0.01).name("Threshold max");
+  folder.add(mist, "modulation", 0, 1, 0.01).name("Modulation");
+  folder.add(mist, "baseDark", 0, 1, 0.001).name("Base (dark)");
+  folder.add(mist, "baseLight", 0, 1, 0.001).name("Base (light)");
+  folder.add(mist, "invertLerp", 0.01, 0.4, 0.01).name("Invert lerp");
+  folder.add(mist, "resolution", 0.1, 1, 0.05).name("Resolution");
+  folder.open();
+}
+
+export default function DebugGui() {
+  const enabled = useDebug();
+  const { theme, setTheme } = useTheme();
+  const themeRef = useRef(theme);
+  const setThemeRef = useRef(setTheme);
+
+  useEffect(() => {
+    themeRef.current = theme;
+    setThemeRef.current = setTheme;
+  }, [theme, setTheme]);
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    let gui: GUI | undefined;
+    let cancelled = false;
+
+    import("lil-gui").then(({ default: GUI }) => {
+      if (cancelled) return;
+
+      gui = new GUI({ title: "Debug" });
+      if (cancelled) {
+        gui.destroy();
+        gui = undefined;
+        return;
+      }
+
+      const themeProxy = {
+        get theme() {
+          return themeRef.current;
+        },
+        set theme(value: "dark" | "light") {
+          setThemeRef.current(value);
+        },
+      };
+      gui.add(themeProxy, "theme", ["dark", "light"]).name("Theme").listen();
+
+      addMistFolder(gui);
+
+      gui
+        .add(
+          {
+            copy: () => {
+              void navigator.clipboard.writeText(JSON.stringify(params, null, 2));
+            },
+          },
+          "copy"
+        )
+        .name("Copy params");
+    });
+
+    return () => {
+      cancelled = true;
+      gui?.destroy();
+    };
+  }, [enabled]);
+
+  return null;
+}
