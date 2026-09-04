@@ -41,7 +41,27 @@ export const textParams = {
 
 export type TextParams = typeof textParams;
 
+
+
+/**
+ * Webcam-driven reflection environment ("living chrome"). Read every frame by
+ * `webcam-env.ts`, so sliders reshape the reflections live while the camera
+ * is on.
+ */
+export const webcamParams = {
+  "mix": 0.26,
+  "contrast": 0.89,
+  "brightness": 0.045,
+  "monochrome": 0.86,
+  "mirror": true,
+  "roomGlow": 0.87,
+  "barIntensity": 0
+}
+
+export type WebcamParams = typeof webcamParams;
+
 export const params = {
   mist: mistParams,
   text: textParams,
+  webcam: webcamParams,
 };

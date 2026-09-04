@@ -52,6 +52,19 @@ function addTextFolder(gui: GUI) {
   folder.open();
 }
 
+function addWebcamFolder(gui: GUI) {
+  const folder = gui.addFolder("Webcam reflections");
+  const { webcam } = params;
+
+  folder.add(webcam, "mix", 0, 1, 0.01).name("Webcam mix");
+  folder.add(webcam, "contrast", 0.5, 2.5, 0.01).name("Contrast");
+  folder.add(webcam, "brightness", -0.3, 0.3, 0.005).name("Brightness");
+  folder.add(webcam, "monochrome", 0, 1, 0.01).name("Monochrome");
+  folder.add(webcam, "mirror").name("Mirror");
+  folder.add(webcam, "roomGlow", 0, 3, 0.01).name("Room glow");
+  folder.add(webcam, "barIntensity", 0, 6, 0.05).name("Light bars");
+}
+
 export default function DebugGui() {
   const enabled = useDebug();
   const { theme, setTheme } = useTheme();
@@ -91,6 +104,7 @@ export default function DebugGui() {
 
       addMistFolder(gui);
       addTextFolder(gui);
+      addWebcamFolder(gui);
 
       gui
         .add(

@@ -198,85 +198,85 @@ body {
   width: 34%;
 }
 
-/* Every row slides in at its own speed. */
+/* Rows slide in at random, each at its own speed. */
 .site-menu[data-open="true"] .site-menu__item:nth-child(1) {
-  transition-delay: 0.05s;
-  transition-duration: 0.4s;
+  transition-delay: 0.18s;
+  transition-duration: 0.32s;
 }
 
 .site-menu[data-open="true"] .site-menu__item:nth-child(2) {
-  transition-delay: 0.09s;
-  transition-duration: 0.44s;
+  transition-delay: 0.06s;
+  transition-duration: 0.28s;
 }
 
 .site-menu[data-open="true"] .site-menu__item:nth-child(3) {
-  transition-delay: 0.13s;
-  transition-duration: 0.48s;
+  transition-delay: 0.28s;
+  transition-duration: 0.4s;
 }
 
 .site-menu[data-open="true"] .site-menu__item:nth-child(4) {
-  transition-delay: 0.17s;
-  transition-duration: 0.52s;
+  transition-delay: 0s;
+  transition-duration: 0.26s;
 }
 
 .site-menu[data-open="true"] .site-menu__item:nth-child(5) {
-  transition-delay: 0.21s;
-  transition-duration: 0.56s;
+  transition-delay: 0.14s;
+  transition-duration: 0.36s;
 }
 
 .site-menu[data-open="true"] .site-menu__item:nth-child(6) {
-  transition-delay: 0.25s;
-  transition-duration: 0.6s;
+  transition-delay: 0.22s;
+  transition-duration: 0.3s;
 }
 
 .site-menu[data-open="true"] .site-menu__item:nth-child(7) {
-  transition-delay: 0.29s;
-  transition-duration: 0.64s;
+  transition-delay: 0.02s;
+  transition-duration: 0.42s;
 }
 
 .site-menu[data-open="true"] .site-menu__item:nth-child(8) {
-  transition-delay: 0.33s;
-  transition-duration: 0.68s;
+  transition-delay: 0.3s;
+  transition-duration: 0.25s;
 }
 
 .site-menu[data-open="true"] .site-menu__item:nth-child(9) {
-  transition-delay: 0.37s;
-  transition-duration: 0.72s;
+  transition-delay: 0.1s;
+  transition-duration: 0.38s;
 }
 
 .site-menu[data-open="true"] .site-menu__item:nth-child(10) {
-  transition-delay: 0.41s;
-  transition-duration: 0.76s;
+  transition-delay: 0.24s;
+  transition-duration: 0.29s;
 }
 
 .site-menu[data-open="true"] .site-menu__item:nth-child(11) {
-  transition-delay: 0.45s;
-  transition-duration: 0.8s;
+  transition-delay: 0.04s;
+  transition-duration: 0.44s;
 }
 
 .site-menu[data-open="true"] .site-menu__item:nth-child(12) {
-  transition-delay: 0.49s;
-  transition-duration: 0.84s;
+  transition-delay: 0.16s;
+  transition-duration: 0.34s;
 }
 
 .site-menu[data-open="true"] .site-menu__item:nth-child(13) {
-  transition-delay: 0.53s;
-  transition-duration: 0.88s;
+  transition-delay: 0.26s;
+  transition-duration: 0.27s;
 }
 
 .site-menu[data-open="true"] .site-menu__item:nth-child(14) {
-  transition-delay: 0.57s;
-  transition-duration: 0.92s;
+  transition-delay: 0.08s;
+  transition-duration: 0.39s;
 }
 
 .site-menu[data-open="true"] .site-menu__item:nth-child(15) {
-  transition-delay: 0.61s;
-  transition-duration: 0.96s;
+  transition-delay: 0.2s;
+  transition-duration: 0.31s;
 }
 
 .site-menu[data-open="true"] .site-menu__item:nth-child(16) {
-  transition-delay: 0.65s;
-  transition-duration: 1s;
+  transition-delay: 0.12s;
+  transition-duration: 0.45s;
 }
 
 .site-menu__link {
