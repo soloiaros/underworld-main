@@ -151,7 +151,7 @@ export default function MistBackground() {
     <canvas
       ref={canvasRef}
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 h-full w-full"
+      className="mist-background pointer-events-none fixed inset-0 h-full w-full"
     />
   );
 }

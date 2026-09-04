@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 
 export interface SceneHandle {
   scene: THREE.Scene;
@@ -25,7 +26,14 @@ export function createScene(canvas: HTMLCanvasElement): SceneHandle {
   const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
   camera.position.set(0, 0, 8);
 
-  // Simple, moody lighting — key light plus a cool rim so the extrusion reads.
+  // Image-based lighting — chrome is pure reflection, so without an
+  // environment map a fully metallic material renders almost black.
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const roomEnvironment = new RoomEnvironment();
+  const environment = pmrem.fromScene(roomEnvironment, 0.04).texture;
+  scene.environment = environment;
+
+  // Directional key/rim on top of the IBL, for crisp bevel highlights.
   const key = new THREE.DirectionalLight(0xffffff, 2.4);
   key.position.set(2, 3, 4);
   scene.add(key);
@@ -46,6 +54,10 @@ export function createScene(canvas: HTMLCanvasElement): SceneHandle {
   resize();
 
   const dispose = () => {
+    scene.environment = null;
+    environment.dispose();
+    pmrem.dispose();
+    roomEnvironment.dispose();
     renderer.dispose();
     scene.traverse((object) => {
       if (object instanceof THREE.Mesh) {

@@ -31,6 +31,20 @@ function addTextFolder(gui: GUI) {
   const folder = gui.addFolder("Text");
   const { text } = params;
 
+  folder.add(text, "size", 0.2, 4, 0.01).name("Size");
+  folder.add(text, "depth", 0, 1.5, 0.01).name("Depth");
+
+  const bevel = folder.addFolder("Bevel");
+  bevel.add(text, "bevelEnabled").name("Enabled");
+  bevel.add(text, "bevelThickness", 0, 0.2, 0.001).name("Thickness");
+  bevel.add(text, "bevelSize", 0, 0.15, 0.001).name("Size");
+  bevel.add(text, "bevelSegments", 1, 10, 1).name("Segments");
+
+  const chrome = folder.addFolder("Chrome");
+  chrome.add(text, "metalness", 0, 1, 0.01).name("Metalness");
+  chrome.add(text, "roughness", 0, 1, 0.01).name("Roughness");
+  chrome.add(text, "envMapIntensity", 0, 3, 0.05).name("Reflection");
+
   folder.add(text, "floatSpeed", 0, 3, 0.01).name("Float speed");
   folder.add(text, "floatAmplitude", 0, 1, 0.01).name("Float amplitude");
   folder.add(text, "rotateSpeed", 0, 1.5, 0.01).name("Rotate speed");

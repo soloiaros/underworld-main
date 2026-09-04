@@ -120,6 +120,9 @@ body {
   flex: 1 1 0;
   min-width: fit-content;
   background-color: var(--foreground);
+  /* Bleed 2px downward so fractional pixel rounding on the transformed
+     rows can't open hairline seams between them. */
+  box-shadow: 0 2px 0 0 var(--foreground);
   pointer-events: auto;
   transform: translateX(-100%);
   transition: transform 0.35s cubic-bezier(0.76, 0, 0.24, 1);
@@ -301,6 +304,17 @@ body {
     width: 100%;
     min-width: 0;
   }
+}
+
+/* Blur the page behind the open menu. */
+.mist-background,
+main {
+  transition: filter 0.6s ease;
+}
+
+html.menu-open .mist-background,
+html.menu-open main {
+  filter: blur(8px);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -36,6 +36,11 @@ export default function SiteMenu() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, closeMenu]);
 
+  useEffect(() => {
+    document.documentElement.classList.toggle("menu-open", isOpen);
+    return () => document.documentElement.classList.remove("menu-open");
+  }, [isOpen]);
+
   return (
     <>
       <header className="site-header">
