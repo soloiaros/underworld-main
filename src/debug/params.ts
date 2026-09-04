@@ -81,18 +81,19 @@ export type StarFieldParams = typeof starFieldParams;
  * `webcam-env.ts`, so sliders reshape the reflections live while the camera
  * is on.
  */
+
 export const webcamParams = {
-  "mix": 0.26,
-  "contrast": 0.89,
-  "brightness": 0.045,
-  "monochrome": 0.86,
+  "mix": 0.27,
+  "contrast": 1.54,
+  "brightness": -0.12,
+  "monochrome": 0.47,
   "mirror": true,
   "roomGlow": 0.87,
   "barIntensity": 0,
-  "maxFps": 15,
+  "maxFps": 30,
   "motionGate": true,
-  "motionThreshold": 0.02,
-  "cubeResolution": 128
+  "motionThreshold": 0.005,
+  "cubeResolution": 64
 }
 
 export type WebcamParams = typeof webcamParams;

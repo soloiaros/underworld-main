@@ -18,6 +18,8 @@ export interface ChromeStarsModel {
 export async function loadChromeStars(): Promise<ChromeStarsModel> {
   const gltf = await new GLTFLoader().loadAsync(MODEL_URL);
   const model = gltf.scene;
+  model.rotation.z = Math.PI * 0.5;
+  model.rotation.x = Math.PI * 0.5;
 
   const material = new THREE.MeshStandardMaterial({
     color: 0xfafafa,
