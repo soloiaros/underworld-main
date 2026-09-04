@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import type * as THREE from "three";
 import { params } from "@/debug/params";
+import { beginAsset, finishAsset, trackAsset } from "@/lib/loading";
 import { createScene } from "@/three/create-scene";
 import { createTextGeometry, createTextMesh, loadFont } from "@/three/load-text";
 import { animateText } from "@/three/animate-text";
@@ -40,12 +41,28 @@ export default function UnderworldText() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    /* Loading-screen tasks — registered up front so a failure anywhere below
+       still settles the gate instead of trapping the visitor on it. */
+    beginAsset("wordmark");
+    beginAsset("star-field");
+    beginAsset("hero-first-frame");
+
     /* The canvas fills the whole hero section; the camera sits further back
        so the wordmark keeps its apparent size and the star field gets room
        to breathe around it. */
-    const { scene, camera, renderer, resize, dispose } = createScene(canvas, {
-      cameraZ: 20,
-    });
+    let handle: ReturnType<typeof createScene>;
+    try {
+      handle = createScene(canvas, { cameraZ: 20 });
+    } catch (error) {
+      /* No WebGL (old device, disabled GPU) — the mist background and the
+         page content still carry the visit. */
+      console.warn("Hero scene unavailable", error);
+      finishAsset("wordmark");
+      finishAsset("star-field");
+      finishAsset("hero-first-frame");
+      return;
+    }
+    const { scene, camera, renderer, resize, dispose } = handle;
     const webcamEnv = createWebcamEnv();
 
     // The camera only streams while the tab is visible and the wordmark is
@@ -127,33 +144,54 @@ export default function UnderworldText() {
       }
     };
 
-    createTextMesh(TEXT, params.text).then((created) => {
-      if (cancelled) {
-        created.geometry.dispose();
-        return;
-      }
-      mesh = created;
-      lastGeometrySignature = geometrySignature();
-      scene.add(mesh);
-      fitStarsToWordmark();
-    });
+    trackAsset("wordmark", createTextMesh(TEXT, params.text))
+      .then((created) => {
+        if (cancelled) {
+          created.geometry.dispose();
+          return;
+        }
+        mesh = created;
+        lastGeometrySignature = geometrySignature();
+        scene.add(mesh);
+        fitStarsToWordmark();
+      })
+      .catch(() => {
+        /* Settled by trackAsset — the hero simply stays without a wordmark. */
+      });
 
-    createStarField().then((field) => {
-      if (cancelled) {
-        field.dispose();
-        return;
-      }
-      starField = field;
-      scene.add(field.mesh);
-      fitStarsToWordmark();
-    });
+    trackAsset("star-field", createStarField())
+      .then((field) => {
+        if (cancelled) {
+          field.dispose();
+          return;
+        }
+        starField = field;
+        scene.add(field.mesh);
+        fitStarsToWordmark();
+      })
+      .catch(() => {
+        /* Settled by trackAsset — the hero simply stays without stars. */
+      });
+
+    /* The gate lifts on the first painted frame with both hero assets in
+       place — or, when the hero starts off-screen (scroll-restored visit),
+       as soon as the data is ready, since there is nothing to paint yet. */
+    let firstFramePending = true;
+    const settleFirstFrame = () => {
+      if (!firstFramePending || !mesh || !starField) return;
+      firstFramePending = false;
+      finishAsset("hero-first-frame");
+    };
 
     const render = () => {
       raf = requestAnimationFrame(render);
       // Hero off-screen: skip rendering entirely (the webcam is already
       // stopped by syncWebcamActivity in that case). Resizing is handled by
       // the window listener — no per-frame layout reads here.
-      if (!inView) return;
+      if (!inView) {
+        settleFirstFrame();
+        return;
+      }
 
       const elapsed = reducedMotion.matches
         ? 0
@@ -216,6 +254,7 @@ export default function UnderworldText() {
 
       webcamEnv.update(renderer);
       renderer.render(scene, camera);
+      settleFirstFrame();
     };
     render();
 

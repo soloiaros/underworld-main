@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { params } from "@/debug/params";
+import { beginAsset, finishAsset, trackAsset } from "@/lib/loading";
 import { createScene } from "@/three/create-scene";
 import { loadChromeStars, disposeChromeStars } from "@/three/load-stars";
 import { animateText } from "@/three/animate-text";
@@ -20,7 +21,18 @@ export default function ChromeStars() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const { scene, camera, renderer, resize, dispose } = createScene(canvas);
+    beginAsset("chrome-stars");
+
+    let handle: ReturnType<typeof createScene>;
+    try {
+      handle = createScene(canvas);
+    } catch (error) {
+      /* No WebGL — the corner decoration is optional; the section stays. */
+      console.warn("Chrome stars scene unavailable", error);
+      finishAsset("chrome-stars");
+      return;
+    }
+    const { scene, camera, renderer, resize, dispose } = handle;
 
     let model: Awaited<ReturnType<typeof loadChromeStars>> | null = null;
     let cancelled = false;
@@ -30,14 +42,18 @@ export default function ChromeStars() {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const start = performance.now();
 
-    loadChromeStars().then((loaded) => {
-      if (cancelled) {
-        disposeChromeStars(loaded);
-        return;
-      }
-      model = loaded;
-      scene.add(loaded.group);
-    });
+    trackAsset("chrome-stars", loadChromeStars())
+      .then((loaded) => {
+        if (cancelled) {
+          disposeChromeStars(loaded);
+          return;
+        }
+        model = loaded;
+        scene.add(loaded.group);
+      })
+      .catch(() => {
+        /* Settled by trackAsset — the corner simply stays empty. */
+      });
 
     // Don't render while the section is off-screen.
     const intersectionObserver = new IntersectionObserver(
