@@ -1,5 +1,7 @@
 import UnderworldText from "@/components/underworld-text";
 import Manifesto from "@/components/manifesto";
+import DropTicker from "@/components/drop-ticker";
+import CollectionBoard from "@/components/collection-board";
 
 export default function Home() {
   return (
@@ -10,6 +12,8 @@ export default function Home() {
         </div>
       </section>
       <Manifesto />
+      <DropTicker />
+      <CollectionBoard />
     </main>
   );
 }

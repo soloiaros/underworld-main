@@ -288,7 +288,7 @@ export default function Manifesto() {
 
       {overlay && (
         <div className="manifesto__flyout" data-show={shown} aria-hidden={active === null}>
-          <div className="manifesto__backdrop" />
+          <div className="dim-backdrop" data-show={shown} />
           {SEQUENCES[overlay.sequence].items.map((item, i) => (
             <div
               key={`${overlay.sequence}-${i}`}
