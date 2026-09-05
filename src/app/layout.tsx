@@ -13,8 +13,6 @@ export const metadata: Metadata = {
     "Underworld Studios — driving the style from the outskirts of London since Y2K. Limited drops, no compromises.",
 };
 
-/* Matches the default dark theme so the browser chrome blends into the page
-   (the in-app toggle restyles the page itself). */
 export const viewport: Viewport = {
   themeColor: "#09090b",
 };

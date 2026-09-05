@@ -6,8 +6,6 @@ import CollectionBoard from "@/components/collection-board";
 export default function Home() {
   return (
     <main className="relative z-10">
-      {/* h-svh: on mobile 100vh includes the strip behind the browser
-          chrome, which would push the hero past the visible screen. */}
       <section className="h-svh w-full">
         <UnderworldText />
       </section>

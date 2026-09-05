@@ -9,19 +9,17 @@ export interface SceneHandle {
   dispose: () => void;
 }
 
-/**
- * Creates the renderer, scene, camera and lights for the 3D wordmark.
- * Owns all Three.js boilerplate so the component stays declarative.
- * `cameraZ` pulls the camera back when a canvas shows more world than logo.
- */
 export function createScene(
   canvas: HTMLCanvasElement,
-  { cameraZ = 8, maxPixelRatio = 2 }: { cameraZ?: number; maxPixelRatio?: number } = {}
+  {
+    cameraZ = 8,
+    maxPixelRatio = 2,
+  }: { cameraZ?: number; maxPixelRatio?: number } = {}
 ): SceneHandle {
   const renderer = new THREE.WebGLRenderer({
     canvas,
     antialias: true,
-    alpha: true, // let the mist background show through
+    alpha: true,
     powerPreference: "high-performance",
   });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxPixelRatio));
@@ -31,14 +29,13 @@ export function createScene(
   const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
   camera.position.set(0, 0, cameraZ);
 
-  // Image-based lighting — chrome is pure reflection, so without an
-  // environment map a fully metallic material renders almost black.
+  /* IBL */
   const pmrem = new THREE.PMREMGenerator(renderer);
   const roomEnvironment = new RoomEnvironment();
   const environment = pmrem.fromScene(roomEnvironment, 0.04).texture;
   scene.environment = environment;
 
-  // Directional key/rim on top of the IBL, for crisp bevel highlights.
+  /* Lights */
   const key = new THREE.DirectionalLight(0xffffff, 2.4);
   key.position.set(2, 3, 4);
   scene.add(key);
@@ -49,9 +46,6 @@ export function createScene(
 
   scene.add(new THREE.AmbientLight(0xffffff, 0.35));
 
-  /* Event-driven (window resize / mount), never per-frame: reading
-     clientWidth/clientHeight forces layout, so the no-change early-out keeps
-     repeated calls cheap. */
   let width = 0;
   let height = 0;
   const resize = () => {

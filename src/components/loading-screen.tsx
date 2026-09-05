@@ -9,19 +9,10 @@ import {
   subscribeLoading,
 } from "@/lib/loading";
 
-/* Never trap the user: whatever the network does, the gate lifts. */
 const FAILSAFE_MS = 12_000;
-/* Below this the reveal would feel like a glitch rather than a transition. */
 const MIN_VISIBLE_MS = 600;
-/* Must outlast the opacity transition in globals.css. */
 const FADE_MS = 700;
 
-/**
- * Full-screen gate shown until every boot asset (wordmark font, star models,
- * first painted hero frame, window load) has settled. Server-rendered visible
- * so there is no flash of an empty hero; fades out and unmounts once done.
- * The webcam prompt is deliberately NOT tracked — it is optional and async.
- */
 export default function LoadingScreen() {
   const snapshot = useSyncExternalStore(
     subscribeLoading,
@@ -32,8 +23,7 @@ export default function LoadingScreen() {
   const [gone, setGone] = useState(false);
   const mountedAt = useRef(0);
 
-  /* The window load event is one of the tracked tasks: it covers the HTML,
-     CSS, JS and any eager images the tracker can't see. */
+  /* Window */
   useEffect(() => {
     mountedAt.current = performance.now();
     beginAsset("window-load");
@@ -46,7 +36,7 @@ export default function LoadingScreen() {
     return () => window.removeEventListener("load", onLoad);
   }, []);
 
-  /* Dismiss once everything settled, but never before MIN_VISIBLE_MS. */
+  /* Dismiss */
   useEffect(() => {
     if (!snapshot.complete || dismissing) return;
     const elapsed = performance.now() - mountedAt.current;
@@ -60,8 +50,7 @@ export default function LoadingScreen() {
     return () => window.clearTimeout(failsafe);
   }, []);
 
-  /* Unmount after the fade. The page underneath is never scroll-locked —
-     locking would toggle the scrollbar gutter and shift the layout. */
+  /* Unmount */
   useEffect(() => {
     if (!dismissing) return;
     const timer = window.setTimeout(() => setGone(true), FADE_MS);

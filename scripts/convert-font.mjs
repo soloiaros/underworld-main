@@ -1,7 +1,4 @@
-/* Convert an .otf/.ttf to the typeface.js JSON format Three's FontLoader expects.
-   Three parses glyph.o by splitting on spaces into lowercase commands:
-   m x y | l x y | q cpx cpy x y | b cpx1 cpy1 cpx2 cpy2 x y   (Y is up)
-   Usage: node scripts/convert-font.mjs <input.otf> <output.json> */
+/* Convert */
 import opentype from "opentype.js";
 import { readFileSync, writeFileSync } from "node:fs";
 
@@ -19,7 +16,6 @@ const upm = font.unitsPerEm;
 
 const round = (n) => Math.round(n * 100) / 100;
 
-/** Serialize opentype path commands into typeface.js outline tokens. */
 function toOutline(commands) {
   const tokens = [];
   for (const c of commands) {
@@ -42,7 +38,7 @@ function toOutline(commands) {
         );
         break;
       case "Z":
-        break; // Three closes subpaths implicitly
+        break;
     }
   }
   return tokens.join(" ");

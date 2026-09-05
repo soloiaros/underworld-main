@@ -52,8 +52,6 @@ function addTextFolder(gui: GUI) {
   folder.open();
 }
 
-/* The stars share the wordmark's chrome — metalness/roughness/reflection
-   live under Text > Chrome and drive both models. */
 function addStarsFolder(gui: GUI) {
   const folder = gui.addFolder("Stars");
   const { stars } = params;
@@ -65,7 +63,6 @@ function addStarsFolder(gui: GUI) {
   folder.add(stars, "tiltAmount", 0, 0.5, 0.005).name("Tilt amount");
 }
 
-/* The hero star field shares the wordmark's chrome (Text > Chrome). */
 function addStarFieldFolder(gui: GUI) {
   const folder = gui.addFolder("Star field");
   const { starField } = params;
@@ -83,7 +80,6 @@ function addWebcamFolder(gui: GUI) {
   const folder = gui.addFolder("Webcam reflections");
   const { webcam } = params;
 
-  /* Applies on the next visibility/scroll sync — off by default on mobile. */
   folder.add(webcam, "enabled").name("Enabled");
   folder.add(webcam, "mix", 0, 1, 0.01).name("Webcam mix");
   folder.add(webcam, "contrast", 0.5, 2.5, 0.01).name("Contrast");
@@ -147,7 +143,9 @@ export default function DebugGui() {
         .add(
           {
             copy: () => {
-              void navigator.clipboard.writeText(JSON.stringify(params, null, 2));
+              void navigator.clipboard.writeText(
+                JSON.stringify(params, null, 2)
+              );
             },
           },
           "copy"

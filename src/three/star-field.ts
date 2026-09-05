@@ -1,12 +1,11 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { params, type StarFieldParams } from "@/debug/params";
+import { createChromeMaterial } from "./chrome";
 
 const MODEL_URL = "/models/star.glb";
-/* Capacity is allocated once; the debug Count knob just moves mesh.count. */
 const MAX_COUNT = 160;
 
-/** Deterministic PRNG — the shell layout survives reloads and debug rebuilds. */
 function mulberry32(seed: number) {
   let a = seed;
   return () => {
@@ -20,14 +19,8 @@ function mulberry32(seed: number) {
 
 export interface StarFieldHandle {
   mesh: THREE.InstancedMesh;
-  /** Shared chrome — sync it next to the wordmark's material each frame. */
   material: THREE.MeshStandardMaterial;
-  /** Re-fit the shell around the wordmark (call when its geometry changes). */
   setBounds: (box: THREE.Box3) => void;
-  /**
-   * Per-frame update. `pointer` is NDC over the canvas (0,0 to disable);
-   * smoothing happens inside.
-   */
   update: (
     elapsed: number,
     pointer: { x: number; y: number },
@@ -37,25 +30,17 @@ export interface StarFieldHandle {
   dispose: () => void;
 }
 
-/**
- * Loads star.glb once and stamps it into a single InstancedMesh — one draw
- * call for the whole field, one shared geometry, zero per-frame allocations.
- * Stars sit on an ellipsoid shell around the wordmark's bounding box, bobbing
- * and twinkling; the pointer tilts the field (parallax) and pushes nearby
- * stars aside in 3D.
- */
 export async function createStarField(): Promise<StarFieldHandle> {
   const gltf = await new GLTFLoader().loadAsync(MODEL_URL);
   gltf.scene.updateMatrixWorld(true);
 
-    let source: THREE.Mesh | null = null;
+  let source: THREE.Mesh | null = null;
   gltf.scene.traverse((object) => {
     if (!source && object instanceof THREE.Mesh) source = object;
   });
   if (!source) throw new Error("star.glb contains no mesh");
 
-  /* Bake the FBX node transforms, then centre and normalize to 1 unit so
-     instance scales are plain world units. */
+  /* Normalize */
   const geometry = (source as THREE.Mesh).geometry.clone();
   geometry.applyMatrix4((source as THREE.Mesh).matrixWorld);
   geometry.center();
@@ -70,21 +55,12 @@ export async function createStarField(): Promise<StarFieldHandle> {
     m.dispose();
   }
 
-  const material = new THREE.MeshStandardMaterial({
-    color: 0xfafafa,
-    metalness: params.text.metalness,
-    roughness: params.text.roughness,
-    envMapIntensity: params.text.envMapIntensity,
-  });
-
+  const material = createChromeMaterial();
   const mesh = new THREE.InstancedMesh(geometry, material, MAX_COUNT);
   mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-  /* The instance spread isn't reflected in the geometry's bounding sphere,
-     and the field is always on-screen anyway — skip the cull test. */
   mesh.frustumCulled = false;
-  mesh.count = 0; // hidden until the wordmark bounds arrive
+  mesh.count = 0;
 
-  /* Per-star data, allocated once — the frame loop only reads it. */
   const base = new Float32Array(MAX_COUNT * 3);
   const scales = new Float32Array(MAX_COUNT);
   const phases = new Float32Array(MAX_COUNT);
@@ -106,16 +82,12 @@ export async function createStarField(): Promise<StarFieldHandle> {
     const center = bounds.getCenter(new THREE.Vector3());
     const half = bounds.getSize(new THREE.Vector3()).multiplyScalar(0.5);
 
-    /* Shell radii: a margin beyond the wordmark, but clamped to the visible
-       frustum so stars never get clipped by the canvas edge — on any
-       viewport. The 0.85/0.8 factors also absorb parallax tilt and the
-       perspective magnification of stars in front of the z=0 plane. */
+    /* Shell */
     const rx = Math.min(half.x + 1.5, halfW * 0.85);
     const ry = Math.min(half.y + 1.4, halfH * 0.8);
     const rz = half.z + 1.2;
 
     for (let i = 0; i < count; i++) {
-      // Uniform point on the unit sphere, stretched into the shell.
       const theta = rng() * Math.PI * 2;
       const z = rng() * 2 - 1;
       const ring = Math.sqrt(1 - z * z);
@@ -152,15 +124,13 @@ export async function createStarField(): Promise<StarFieldHandle> {
     }
     mesh.count = count;
 
-    // Smoothed pointer, so parallax and repel never jerk.
+    /* Pointer */
     smoothed.x += (pointer.x - smoothed.x) * 0.08;
     smoothed.y += (pointer.y - smoothed.y) * 0.08;
 
-    // Parallax: the whole field leans towards the pointer.
     mesh.rotation.y = smoothed.x * p.parallax;
     mesh.rotation.x = -smoothed.y * p.parallax * 0.6;
 
-    // The pointer projected onto the z=0 plane — the repel field's centre.
     const cx = smoothed.x * halfW;
     const cy = smoothed.y * halfH;
 
@@ -172,7 +142,7 @@ export async function createStarField(): Promise<StarFieldHandle> {
         base[i3 + 1] + Math.sin(elapsed * bobSpeeds[i] + phase) * p.bobAmount;
       let z = base[i3 + 2];
 
-      // Repel: push away from the cursor with a quadratic falloff.
+      /* Repel */
       const dx = x - cx;
       const dy = y - cy;
       const dist = Math.sqrt(dx * dx + dy * dy + z * z);
@@ -204,7 +174,7 @@ export async function createStarField(): Promise<StarFieldHandle> {
     material,
     setBounds: (box) => {
       bounds = box.clone();
-      layoutCount = -1; // force a re-fit on the next update
+      layoutCount = -1;
     },
     update,
     dispose: () => {

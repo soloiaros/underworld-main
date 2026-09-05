@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { params } from "@/debug/params";
+import { createChromeMaterial } from "./chrome";
 
 const MODEL_URL = "/models/chromed_stars.glb";
 
@@ -9,25 +9,13 @@ export interface ChromeStarsModel {
   material: THREE.MeshStandardMaterial;
 }
 
-/**
- * Loads the chromed stars GLB and swaps whatever materials it ships with for
- * the wordmark's chrome (Text > Chrome in the debug panel drives both). The
- * model is centred on the origin and normalized to 1 unit across, so
- * `params.stars.scale` is in plain world units.
- */
 export async function loadChromeStars(): Promise<ChromeStarsModel> {
   const gltf = await new GLTFLoader().loadAsync(MODEL_URL);
   const model = gltf.scene;
   model.rotation.z = Math.PI * 0.5;
   model.rotation.x = Math.PI * 0.5;
 
-  const material = new THREE.MeshStandardMaterial({
-    color: 0xfafafa,
-    metalness: params.text.metalness,
-    roughness: params.text.roughness,
-    envMapIntensity: params.text.envMapIntensity,
-  });
-
+  const material = createChromeMaterial();
   model.traverse((object) => {
     if (object instanceof THREE.Mesh) {
       const old = object.material;
@@ -36,8 +24,7 @@ export async function loadChromeStars(): Promise<ChromeStarsModel> {
     }
   });
 
-  /* Centre the bounding box on the origin. Scale is applied to the subtree
-     before the position offset, so the offset must be pre-scaled too. */
+  /* Origin */
   const box = new THREE.Box3().setFromObject(model);
   const center = box.getCenter(new THREE.Vector3());
   const size = box.getSize(new THREE.Vector3());
@@ -50,7 +37,6 @@ export async function loadChromeStars(): Promise<ChromeStarsModel> {
   return { group, material };
 }
 
-/** Frees geometry and the shared chrome material (never added to a scene). */
 export function disposeChromeStars({ group, material }: ChromeStarsModel) {
   group.traverse((object) => {
     if (object instanceof THREE.Mesh) object.geometry.dispose();

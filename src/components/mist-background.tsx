@@ -112,10 +112,10 @@ export default function MistBackground() {
 
     const render = () => {
       raf = requestAnimationFrame(render);
-      // Resizing is event-driven (window listener) — no per-frame layout reads.
-
       const mist = params.mist;
-      const time = reducedMotion.matches ? 0 : (performance.now() - start) / 1000;
+      const time = reducedMotion.matches
+        ? 0
+        : (performance.now() - start) / 1000;
 
       currentInvertRef.current +=
         (invertRef.current - currentInvertRef.current) * mist.invertLerp;

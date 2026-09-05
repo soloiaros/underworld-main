@@ -8,6 +8,7 @@ import {
   useState,
   type CSSProperties,
 } from "react";
+import { hoverTapProps } from "@/lib/hover-tap";
 import ChromeStars from "./chrome-stars";
 
 interface FlyoutNote {
@@ -37,9 +38,6 @@ interface Sequence {
   items: FlyoutItem[];
 }
 
-/* dx/dy are pixel offsets from the phrase centre at a 1280px-wide viewport;
-   they scale down on smaller screens, and on phones the scatter becomes a
-   centred vertical stack instead (see measure()). */
 const SEQUENCES: Sequence[] = [
   {
     phrase: "outskirts of London",
@@ -54,7 +52,7 @@ const SEQUENCES: Sequence[] = [
       },
       {
         kind: "photo",
-        src: "/img/hq.webp",
+        src: "/img/hq.png",
         alt: "The first Underworld Studios HQ, 2001",
         width: 770,
         height: 516,
@@ -98,7 +96,7 @@ const SEQUENCES: Sequence[] = [
     items: [
       {
         kind: "photo",
-        src: "/img/customer1.webp",
+        src: "/img/customer1.png",
         alt: "A street angel wearing Underworld Studios",
         width: 836,
         height: 638,
@@ -108,7 +106,7 @@ const SEQUENCES: Sequence[] = [
       },
       {
         kind: "photo",
-        src: "/img/customer2.webp",
+        src: "/img/customer2.png",
         alt: "A street angel wearing Underworld Studios",
         width: 790,
         height: 788,
@@ -118,7 +116,7 @@ const SEQUENCES: Sequence[] = [
       },
       {
         kind: "photo",
-        src: "/img/customer3.webp",
+        src: "/img/customer3.png",
         alt: "A street angel wearing Underworld Studios",
         width: 946,
         height: 706,
@@ -130,30 +128,19 @@ const SEQUENCES: Sequence[] = [
   },
 ];
 
-/* Must outlast the flyout exit transition in globals.css. */
 const EXIT_MS = 500;
-
-/* Flyout photos render at clamp(9rem, 24vw, 16rem) — declaring it keeps the
-   browser on the small srcset candidates instead of the 1080w+ ones the
-   natural `width` props would otherwise produce. The hidden preload set below
-   uses the same value so both resolve to the same optimized URL. */
 const PHOTO_SIZES = "clamp(9rem, 24vw, 16rem)";
+const NOTE_HALF_HEIGHT = 40;
 
-/* Rendered half-height of a flyout photo in px, mirroring the CSS width
-   clamps (including the short-screen rule) — measure() uses it to keep the
-   mobile stack fully inside the viewport. The +8 absorbs the drop shadow. */
 function photoHalfHeight(item: FlyoutPhoto) {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   const renderedWidth =
-    vh <= 512 // 32rem short-screen rule in globals.css
+    vh <= 512
       ? Math.min(256, Math.max(96, vh * 0.22))
       : Math.min(256, Math.max(144, vw * 0.24));
   return (renderedWidth * item.height) / item.width / 2 + 8;
 }
-
-/* Estimated half-height of a note card (padding + two text lines + shadow). */
-const NOTE_HALF_HEIGHT = 40;
 
 interface FlyoutOffset {
   dx: number;
@@ -165,16 +152,9 @@ interface OverlayOrigin {
   sequence: number;
   x: number;
   y: number;
-  /** Final per-item offsets in px — already scaled (desktop) or stacked and
-      clamped into the viewport (mobile). */
   offsets: FlyoutOffset[];
 }
 
-/**
- * The brand manifesto: a full-viewport, text-only section. Key phrases are
- * interactive — activating one dims the page and lets supporting notes and
- * archive photos fly out of the phrase itself.
- */
 export default function Manifesto() {
   const [active, setActive] = useState<number | null>(null);
   const [overlay, setOverlay] = useState<OverlayOrigin | null>(null);
@@ -190,8 +170,7 @@ export default function Manifesto() {
     const y = rect.top + rect.height / 2;
     const items = SEQUENCES[index].items;
 
-    /* Desktop: the art-directed scatter around the phrase, scaled down with
-       the viewport (never below 0.55 — the offsets were tuned at 1280px). */
+    /* Desktop */
     if (!window.matchMedia("(max-width: 48rem)").matches) {
       const scale = Math.min(1, Math.max(0.55, window.innerWidth / 1280));
       return {
@@ -206,11 +185,7 @@ export default function Manifesto() {
       };
     }
 
-    /* Phones: the scatter would fly off a narrow screen, so the items stack
-       vertically, centred on the screen rather than the phrase, and the
-       whole stack shifts just enough to keep every item fully inside the
-       viewport. The origin stays on the phrase, so items still bloom out of
-       the text before settling into the stack. */
+    /* Stack */
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const spacing = Math.min(190, Math.max(96, vh * 0.22));
@@ -218,7 +193,7 @@ export default function Manifesto() {
     const offsets = items.map((item, i) => ({
       dx: 0,
       dy: (i - (items.length - 1) / 2) * spacing,
-      rot: item.rot * 0.6, // subtler tilt — rotation inflates the bounding box
+      rot: item.rot * 0.6,
     }));
     const edges = offsets.map((o, i) => {
       const item = items[i];
@@ -269,8 +244,7 @@ export default function Manifesto() {
     }, EXIT_MS);
   }, []);
 
-  /* Start collapsed at the phrase, then spring open two frames later so the
-     browser has painted the initial state and the transition can run. */
+  /* Reveal */
   useEffect(() => {
     if (!overlay || active === null) return;
     let inner = 0;
@@ -283,13 +257,10 @@ export default function Manifesto() {
     };
   }, [overlay, active]);
 
-  /* While active: keep the flyout anchored to its phrase, allow Escape and
-     outside taps to dismiss. */
+  /* Dismiss */
   useEffect(() => {
     if (active === null) return;
 
-    /* Scroll fires per-frame; coalesce remeasures into one per animation
-       frame so an open flyout never re-renders faster than it paints. */
     let remeasureRaf = 0;
     const remeasure = () => {
       if (remeasureRaf) return;
@@ -337,23 +308,7 @@ export default function Manifesto() {
       className="manifesto__phrase"
       data-active={active === index}
       aria-expanded={active === index}
-      onPointerEnter={(event) => {
-        if (event.pointerType === "mouse") open(index);
-      }}
-      onPointerLeave={(event) => {
-        if (event.pointerType === "mouse") close();
-      }}
-      onClick={() => {
-        /* Tap-to-toggle for touch devices; mouse users get hover. */
-        if (window.matchMedia("(hover: none)").matches) {
-          if (active === index) close();
-          else open(index);
-        }
-      }}
-      onFocus={(event) => {
-        if (event.target.matches(":focus-visible")) open(index);
-      }}
-      onBlur={close}
+      {...hoverTapProps(index, active, open, close)}
     >
       {SEQUENCES[index].phrase}
     </button>
@@ -366,9 +321,7 @@ export default function Manifesto() {
       aria-label="About Underworld Studios"
     >
       <ChromeStars />
-      {/* Warm the image cache while the section approaches the viewport, so
-          the first flyout opens with its photos already decoded. Rendered at
-          1px instead of display:none — display:none would skip the fetch. */}
+      {/* Preload */}
       <div className="manifesto__preload" aria-hidden="true">
         {SEQUENCES.flatMap((sequence) =>
           sequence.items
@@ -400,7 +353,11 @@ export default function Manifesto() {
       </p>
 
       {overlay && (
-        <div className="manifesto__flyout" data-show={shown} aria-hidden={active === null}>
+        <div
+          className="manifesto__flyout"
+          data-show={shown}
+          aria-hidden={active === null}
+        >
           <div className="dim-backdrop" data-show={shown} />
           {SEQUENCES[overlay.sequence].items.map((item, i) => (
             <div

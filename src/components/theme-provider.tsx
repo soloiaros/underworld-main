@@ -11,15 +11,14 @@ const ThemeContext = createContext<{
 } | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("dark");
+  const [theme, setTheme] = useState<Theme>("dark");
 
   useEffect(() => {
     document.documentElement.classList.toggle("light", theme === "light");
   }, [theme]);
 
-  const setTheme = useCallback((next: Theme) => setThemeState(next), []);
   const toggleTheme = useCallback(
-    () => setThemeState((t) => (t === "dark" ? "light" : "dark")),
+    () => setTheme((t) => (t === "dark" ? "light" : "dark")),
     []
   );
 

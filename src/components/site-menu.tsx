@@ -5,8 +5,33 @@ import {
   useEffect,
   useRef,
   useState,
+  type CSSProperties,
   type MouseEvent,
 } from "react";
+
+const ROWS: {
+  width: string;
+  delay: string;
+  duration: string;
+  label?: string;
+}[] = [
+  { width: "38%", delay: "0.18s", duration: "0.32s" },
+  { width: "16%", delay: "0.06s", duration: "0.28s", label: "[ item one ]" },
+  { width: "19%", delay: "0.28s", duration: "0.4s", label: "[ item two ]" },
+  { width: "32%", delay: "0s", duration: "0.26s" },
+  { width: "24%", delay: "0.14s", duration: "0.36s" },
+  { width: "20%", delay: "0.22s", duration: "0.3s", label: "[ item three ]" },
+  { width: "28%", delay: "0.02s", duration: "0.42s" },
+  { width: "21%", delay: "0.3s", duration: "0.25s", label: "[ item four ]" },
+  { width: "44%", delay: "0.1s", duration: "0.38s" },
+  { width: "30%", delay: "0.24s", duration: "0.29s" },
+  { width: "17%", delay: "0.04s", duration: "0.44s", label: "[ item five ]" },
+  { width: "36%", delay: "0.16s", duration: "0.34s" },
+  { width: "22%", delay: "0.26s", duration: "0.27s" },
+  { width: "40%", delay: "0.08s", duration: "0.39s" },
+  { width: "26%", delay: "0.2s", duration: "0.31s" },
+  { width: "34%", delay: "0.12s", duration: "0.45s" },
+];
 
 export default function SiteMenu() {
   const [isOpen, setIsOpen] = useState(false);
@@ -27,11 +52,9 @@ export default function SiteMenu() {
 
   useEffect(() => {
     if (!isOpen) return;
-
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") closeMenu();
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, closeMenu]);
@@ -68,90 +91,30 @@ export default function SiteMenu() {
         aria-label="Site"
       >
         <ul className="site-menu__list">
-          <li
-            className="site-menu__item site-menu__item--empty"
-            aria-hidden="true"
-          ></li>
-
-          <li className="site-menu__item">
-            <a className="site-menu__link" href="#" onClick={handleLinkClick}>
-              [ item one ]
-            </a>
-          </li>
-
-          <li className="site-menu__item">
-            <a className="site-menu__link" href="#" onClick={handleLinkClick}>
-              [ item two ]
-            </a>
-          </li>
-
-          <li
-            className="site-menu__item site-menu__item--empty"
-            aria-hidden="true"
-          ></li>
-
-          <li
-            className="site-menu__item site-menu__item--empty"
-            aria-hidden="true"
-          ></li>
-
-          <li className="site-menu__item">
-            <a className="site-menu__link" href="#" onClick={handleLinkClick}>
-              [ item three ]
-            </a>
-          </li>
-
-          <li
-            className="site-menu__item site-menu__item--empty"
-            aria-hidden="true"
-          ></li>
-
-          <li className="site-menu__item">
-            <a className="site-menu__link" href="#" onClick={handleLinkClick}>
-              [ item four ]
-            </a>
-          </li>
-
-          <li
-            className="site-menu__item site-menu__item--empty"
-            aria-hidden="true"
-          ></li>
-
-          <li
-            className="site-menu__item site-menu__item--empty"
-            aria-hidden="true"
-          ></li>
-
-          <li className="site-menu__item">
-            <a className="site-menu__link" href="#" onClick={handleLinkClick}>
-              [ item five ]
-            </a>
-          </li>
-
-          <li
-            className="site-menu__item site-menu__item--empty"
-            aria-hidden="true"
-          ></li>
-
-          <li
-            className="site-menu__item site-menu__item--empty"
-            aria-hidden="true"
-          ></li>
-
-          <li
-            className="site-menu__item site-menu__item--empty"
-            aria-hidden="true"
-          ></li>
-
-          <li
-            className="site-menu__item site-menu__item--empty"
-            aria-hidden="true"
-          ></li>
-
-          <li
-            className="site-menu__item site-menu__item--empty"
-            aria-hidden="true"
-          ></li>
+          {ROWS.map((row, i) => (
+            <li
+              key={i}
+              className="site-menu__item"
+              style={
+                {
+                  "--w": row.width,
+                  "--d": row.delay,
+                  "--t": row.duration,
+                } as CSSProperties
+              }
+              aria-hidden={row.label ? undefined : true}
+            >
+              {row.label && (
+                <a
+                  className="site-menu__link"
+                  href="#"
+                  onClick={handleLinkClick}
+                >
+                  {row.label}
+                </a>
+              )}
+            </li>
+          ))}
         </ul>
       </nav>
     </>

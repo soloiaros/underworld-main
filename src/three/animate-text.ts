@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import type * as THREE from "three";
 
 export interface AnimationParams {
   floatSpeed: number;
@@ -7,10 +7,6 @@ export interface AnimationParams {
   tiltAmount: number;
 }
 
-/**
- * Per-frame animation for the wordmark: a slow bob on Y, a gentle continuous
- * rotation, and a subtle rocking tilt. Pure motion — no Three.js setup here.
- */
 export function animateText(
   mesh: THREE.Object3D,
   elapsed: number,
