@@ -9,12 +9,14 @@ import {
   type MouseEvent,
 } from "react";
 import ThemeToggle from "./theme-toggle";
+import Attributions from "./attributions";
 
 const ROWS: {
   width: string;
   delay: string;
   duration: string;
   label?: string;
+  action?: "attributions";
 }[] = [
   { width: "38%", delay: "0.18s", duration: "0.32s" },
   { width: "16%", delay: "0.06s", duration: "0.28s", label: "[ item one ]" },
@@ -27,7 +29,13 @@ const ROWS: {
   { width: "44%", delay: "0.1s", duration: "0.38s" },
   { width: "30%", delay: "0.24s", duration: "0.29s" },
   { width: "17%", delay: "0.04s", duration: "0.44s", label: "[ item five ]" },
-  { width: "36%", delay: "0.16s", duration: "0.34s" },
+  {
+    width: "36%",
+    delay: "0.16s",
+    duration: "0.34s",
+    label: "[ attributions ]",
+    action: "attributions",
+  },
   { width: "22%", delay: "0.26s", duration: "0.27s" },
   { width: "40%", delay: "0.08s", duration: "0.39s" },
   { width: "26%", delay: "0.2s", duration: "0.31s" },
@@ -36,10 +44,21 @@ const ROWS: {
 
 export default function SiteMenu() {
   const [isOpen, setIsOpen] = useState(false);
+  const [attributionsOpen, setAttributionsOpen] = useState(false);
   const toggleButtonRef = useRef<HTMLButtonElement>(null);
 
   const closeMenu = useCallback(() => {
     setIsOpen(false);
+    toggleButtonRef.current?.focus();
+  }, []);
+
+  const openAttributions = useCallback(() => {
+    setIsOpen(false);
+    setAttributionsOpen(true);
+  }, []);
+
+  const closeAttributions = useCallback(() => {
+    setAttributionsOpen(false);
     toggleButtonRef.current?.focus();
   }, []);
 
@@ -106,19 +125,35 @@ export default function SiteMenu() {
               }
               aria-hidden={row.label ? undefined : true}
             >
-              {row.label && (
-                <a
+              {row.action === "attributions" ? (
+                <button
+                  type="button"
                   className="site-menu__link"
-                  href="#"
-                  onClick={handleLinkClick}
+                  aria-haspopup="dialog"
+                  aria-expanded={attributionsOpen}
+                  onClick={openAttributions}
                 >
                   {row.label}
-                </a>
+                </button>
+              ) : (
+                row.label && (
+                  <a
+                    className="site-menu__link"
+                    href="#"
+                    onClick={handleLinkClick}
+                  >
+                    {row.label}
+                  </a>
+                )
               )}
             </li>
           ))}
         </ul>
       </nav>
+      <Attributions
+        open={attributionsOpen}
+        onClose={closeAttributions}
+      />
     </>
   );
 }

@@ -107,19 +107,15 @@ body {
 /* Menu */
 
 .site-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 50;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  pointer-events: none;
+  /* Unwrap so each control can blend with the page, not an isolated header. */
+  display: contents;
 }
 
 .site-menu-button,
 .theme-toggle {
+  position: fixed;
+  top: 0;
+  z-index: 50;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -127,20 +123,24 @@ body {
   height: 2.75rem;
   margin: 1.25rem;
   padding: 0;
-  color: var(--foreground);
+  color: #fff;
   background: none;
   border: none;
   cursor: pointer;
-  pointer-events: auto;
-  transition: opacity 0.2s ease;
+  mix-blend-mode: difference;
 }
 
 .site-menu-button {
+  left: 0;
   flex-direction: column;
   gap: 6px;
 }
 
-.site-menu-button:hover {
+.theme-toggle {
+  right: 0;
+}
+
+.site-menu-button:hover .site-menu-button__line {
   opacity: 0.6;
 }
 
@@ -164,11 +164,6 @@ body {
 
 .site-menu-button[data-open="true"] .site-menu-button__line:nth-child(3) {
   transform: translateY(-8px) rotate(-45deg);
-}
-
-.site-menu-button[data-open="true"],
-html.menu-open .theme-toggle {
-  color: var(--background);
 }
 
 .theme-toggle__icon {
@@ -249,6 +244,15 @@ html.menu-open .theme-toggle {
 
 .site-menu__link:hover {
   transform: translateX(-0.35rem);
+}
+
+button.site-menu__link {
+  width: 100%;
+  font: inherit;
+  text-align: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
 }
 
 @media (max-width: 48rem) {
