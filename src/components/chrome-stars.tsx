@@ -20,7 +20,10 @@ export default function ChromeStars() {
 
     let handle: ReturnType<typeof createScene>;
     try {
-      handle = createScene(canvas, { maxPixelRatio: MAX_PIXEL_RATIO });
+      handle = createScene(canvas, {
+        maxPixelRatio: MAX_PIXEL_RATIO,
+        preserveDrawingBuffer: true,
+      });
     } catch (error) {
       console.warn("Chrome stars scene unavailable", error);
       finishAsset("chrome-stars");

@@ -107,15 +107,19 @@ body {
 /* Menu */
 
 .site-header {
-  /* Unwrap so each control can blend with the page, not an isolated header. */
-  display: contents;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  pointer-events: none;
 }
 
 .site-menu-button,
 .theme-toggle {
-  position: fixed;
-  top: 0;
-  z-index: 50;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -127,20 +131,21 @@ body {
   background: none;
   border: none;
   cursor: pointer;
-  mix-blend-mode: difference;
+  pointer-events: auto;
+  transition: color 0.15s ease;
+}
+
+.site-menu-button[data-tone="light"],
+.theme-toggle[data-tone="light"] {
+  color: #000;
 }
 
 .site-menu-button {
-  left: 0;
   flex-direction: column;
   gap: 6px;
 }
 
-.theme-toggle {
-  right: 0;
-}
-
-.site-menu-button:hover .site-menu-button__line {
+.site-menu-button:hover {
   opacity: 0.6;
 }
 

@@ -8,6 +8,7 @@ import {
   type CSSProperties,
   type MouseEvent,
 } from "react";
+import { useBackdropTone } from "@/lib/backdrop-tone";
 import ThemeToggle from "./theme-toggle";
 import Attributions from "./attributions";
 
@@ -46,6 +47,7 @@ export default function SiteMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const [attributionsOpen, setAttributionsOpen] = useState(false);
   const toggleButtonRef = useRef<HTMLButtonElement>(null);
+  const menuTone = useBackdropTone(toggleButtonRef);
 
   const closeMenu = useCallback(() => {
     setIsOpen(false);
@@ -92,6 +94,7 @@ export default function SiteMenu() {
           type="button"
           className="site-menu-button"
           data-open={isOpen}
+          data-tone={menuTone}
           aria-expanded={isOpen}
           aria-controls="site-menu"
           aria-label={isOpen ? "Close menu" : "Open menu"}

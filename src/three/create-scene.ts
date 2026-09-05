@@ -14,12 +14,18 @@ export function createScene(
   {
     cameraZ = 8,
     maxPixelRatio = 2,
-  }: { cameraZ?: number; maxPixelRatio?: number } = {}
+    preserveDrawingBuffer = false,
+  }: {
+    cameraZ?: number;
+    maxPixelRatio?: number;
+    preserveDrawingBuffer?: boolean;
+  } = {}
 ): SceneHandle {
   const renderer = new THREE.WebGLRenderer({
     canvas,
     antialias: true,
     alpha: true,
+    preserveDrawingBuffer,
     powerPreference: "high-performance",
   });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxPixelRatio));
