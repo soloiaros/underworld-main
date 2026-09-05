@@ -52,7 +52,7 @@ const SEQUENCES: Sequence[] = [
       },
       {
         kind: "photo",
-        src: "/img/hq.png",
+        src: "/img/hq.webp",
         alt: "The first Underworld Studios HQ, 2001",
         width: 770,
         height: 516,
@@ -96,7 +96,7 @@ const SEQUENCES: Sequence[] = [
     items: [
       {
         kind: "photo",
-        src: "/img/customer1.png",
+        src: "/img/customer1.webp",
         alt: "A street angel wearing Underworld Studios",
         width: 836,
         height: 638,
@@ -106,7 +106,7 @@ const SEQUENCES: Sequence[] = [
       },
       {
         kind: "photo",
-        src: "/img/customer2.png",
+        src: "/img/customer2.webp",
         alt: "A street angel wearing Underworld Studios",
         width: 790,
         height: 788,
@@ -116,7 +116,7 @@ const SEQUENCES: Sequence[] = [
       },
       {
         kind: "photo",
-        src: "/img/customer3.png",
+        src: "/img/customer3.webp",
         alt: "A street angel wearing Underworld Studios",
         width: 946,
         height: 706,
@@ -153,6 +153,33 @@ interface OverlayOrigin {
   x: number;
   y: number;
   offsets: FlyoutOffset[];
+}
+
+function PhraseButton({
+  index,
+  active,
+  open,
+  close,
+  buttonRef,
+}: {
+  index: number;
+  active: number | null;
+  open: (index: number) => void;
+  close: () => void;
+  buttonRef: (el: HTMLButtonElement | null) => void;
+}) {
+  return (
+    <button
+      ref={buttonRef}
+      type="button"
+      className="manifesto__phrase"
+      data-active={active === index}
+      aria-expanded={active === index}
+      {...hoverTapProps(index, active, open, close)}
+    >
+      {SEQUENCES[index].phrase}
+    </button>
+  );
 }
 
 export default function Manifesto() {
@@ -299,21 +326,6 @@ export default function Manifesto() {
     []
   );
 
-  const renderPhrase = (index: number) => (
-    <button
-      ref={(el) => {
-        buttonRefs.current[index] = el;
-      }}
-      type="button"
-      className="manifesto__phrase"
-      data-active={active === index}
-      aria-expanded={active === index}
-      {...hoverTapProps(index, active, open, close)}
-    >
-      {SEQUENCES[index].phrase}
-    </button>
-  );
-
   return (
     <section
       className="manifesto"
@@ -340,15 +352,39 @@ export default function Manifesto() {
       </div>
       <p className="manifesto__text">
         {"Driving the style from the "}
-        {renderPhrase(0)}
+        <PhraseButton
+          index={0}
+          active={active}
+          open={open}
+          close={close}
+          buttonRef={(el) => {
+            buttonRefs.current[0] = el;
+          }}
+        />
         {
           " since y2k. Each item is a rebel against what's been marketed as premium. Each drop is a wild fantasy of "
         }
-        {renderPhrase(1)}
+        <PhraseButton
+          index={1}
+          active={active}
+          open={open}
+          close={close}
+          buttonRef={(el) => {
+            buttonRefs.current[1] = el;
+          }}
+        />
         {
           " around the globe. We came here with nothing to lose, and we've been serving "
         }
-        {renderPhrase(2)}
+        <PhraseButton
+          index={2}
+          active={active}
+          open={open}
+          close={close}
+          buttonRef={(el) => {
+            buttonRefs.current[2] = el;
+          }}
+        />
         {" for two decades."}
       </p>
 

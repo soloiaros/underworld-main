@@ -31,14 +31,10 @@ html.light {
 body {
   background: var(--background);
   color: var(--foreground);
-  /* Sections sized at 100vw would otherwise open a horizontal scrollbar
-     whenever a vertical one is present. */
   overflow-x: clip;
 }
 
-/* -------------------------------------------------------------------------- */
-/* Loading screen                                                             */
-/* -------------------------------------------------------------------------- */
+/* Loading */
 
 .loading-screen {
   position: fixed;
@@ -108,9 +104,7 @@ body {
   }
 }
 
-/* -------------------------------------------------------------------------- */
-/* Site menu                                                                  */
-/* -------------------------------------------------------------------------- */
+/* Menu */
 
 .site-header {
   position: fixed;
@@ -162,7 +156,6 @@ body {
   transform: translateY(-8px) rotate(-45deg);
 }
 
-/* Keep the icon visible against the inverted menu rows. */
 .site-menu-button[data-open="true"] {
   color: var(--background);
 }
@@ -194,9 +187,9 @@ body {
 .site-menu__item {
   flex: 1 1 0;
   min-width: fit-content;
+  width: var(--w);
   background-color: var(--foreground);
-  /* Bleed 2px downward so fractional pixel rounding on the transformed
-     rows can't open hairline seams between them. */
+  /* Seams */
   box-shadow: 0 2px 0 0 var(--foreground);
   pointer-events: auto;
   transform: translateX(-100%);
@@ -205,153 +198,9 @@ body {
 
 .site-menu[data-open="true"] .site-menu__item {
   transform: translateX(0);
+  transition-delay: var(--d);
+  transition-duration: var(--t);
   transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-/* Every row has its own width. */
-.site-menu__item:nth-child(1) {
-  width: 38%;
-}
-
-.site-menu__item:nth-child(2) {
-  width: 16%;
-}
-
-.site-menu__item:nth-child(3) {
-  width: 19%;
-}
-
-.site-menu__item:nth-child(4) {
-  width: 32%;
-}
-
-.site-menu__item:nth-child(5) {
-  width: 24%;
-}
-
-.site-menu__item:nth-child(6) {
-  width: 20%;
-}
-
-.site-menu__item:nth-child(7) {
-  width: 28%;
-}
-
-.site-menu__item:nth-child(8) {
-  width: 21%;
-}
-
-.site-menu__item:nth-child(9) {
-  width: 44%;
-}
-
-.site-menu__item:nth-child(10) {
-  width: 30%;
-}
-
-.site-menu__item:nth-child(11) {
-  width: 17%;
-}
-
-.site-menu__item:nth-child(12) {
-  width: 36%;
-}
-
-.site-menu__item:nth-child(13) {
-  width: 22%;
-}
-
-.site-menu__item:nth-child(14) {
-  width: 40%;
-}
-
-.site-menu__item:nth-child(15) {
-  width: 26%;
-}
-
-.site-menu__item:nth-child(16) {
-  width: 34%;
-}
-
-/* Rows slide in at random, each at its own speed. */
-.site-menu[data-open="true"] .site-menu__item:nth-child(1) {
-  transition-delay: 0.18s;
-  transition-duration: 0.32s;
-}
-
-.site-menu[data-open="true"] .site-menu__item:nth-child(2) {
-  transition-delay: 0.06s;
-  transition-duration: 0.28s;
-}
-
-.site-menu[data-open="true"] .site-menu__item:nth-child(3) {
-  transition-delay: 0.28s;
-  transition-duration: 0.4s;
-}
-
-.site-menu[data-open="true"] .site-menu__item:nth-child(4) {
-  transition-delay: 0s;
-  transition-duration: 0.26s;
-}
-
-.site-menu[data-open="true"] .site-menu__item:nth-child(5) {
-  transition-delay: 0.14s;
-  transition-duration: 0.36s;
-}
-
-.site-menu[data-open="true"] .site-menu__item:nth-child(6) {
-  transition-delay: 0.22s;
-  transition-duration: 0.3s;
-}
-
-.site-menu[data-open="true"] .site-menu__item:nth-child(7) {
-  transition-delay: 0.02s;
-  transition-duration: 0.42s;
-}
-
-.site-menu[data-open="true"] .site-menu__item:nth-child(8) {
-  transition-delay: 0.3s;
-  transition-duration: 0.25s;
-}
-
-.site-menu[data-open="true"] .site-menu__item:nth-child(9) {
-  transition-delay: 0.1s;
-  transition-duration: 0.38s;
-}
-
-.site-menu[data-open="true"] .site-menu__item:nth-child(10) {
-  transition-delay: 0.24s;
-  transition-duration: 0.29s;
-}
-
-.site-menu[data-open="true"] .site-menu__item:nth-child(11) {
-  transition-delay: 0.04s;
-  transition-duration: 0.44s;
-}
-
-.site-menu[data-open="true"] .site-menu__item:nth-child(12) {
-  transition-delay: 0.16s;
-  transition-duration: 0.34s;
-}
-
-.site-menu[data-open="true"] .site-menu__item:nth-child(13) {
-  transition-delay: 0.26s;
-  transition-duration: 0.27s;
-}
-
-.site-menu[data-open="true"] .site-menu__item:nth-child(14) {
-  transition-delay: 0.08s;
-  transition-duration: 0.39s;
-}
-
-.site-menu[data-open="true"] .site-menu__item:nth-child(15) {
-  transition-delay: 0.2s;
-  transition-duration: 0.31s;
-}
-
-.site-menu[data-open="true"] .site-menu__item:nth-child(16) {
-  transition-delay: 0.12s;
-  transition-duration: 0.45s;
 }
 
 .site-menu__link {
@@ -372,17 +221,15 @@ body {
   transform: translateX(-0.35rem);
 }
 
-/* On mobile, every row slides all the way to the right edge, so the menu
-   covers the entire screen with no gaps. (:nth-child(n) matches the
-   specificity of the per-row width rules above.) */
 @media (max-width: 48rem) {
-  .site-menu__item:nth-child(n) {
+  .site-menu__item {
     width: 100%;
     min-width: 0;
   }
 }
 
-/* Blur the page behind the open menu. */
+/* Blur */
+
 .mist-background,
 main {
   transition: filter 0.6s ease;
@@ -402,9 +249,7 @@ html.menu-open main {
   }
 }
 
-/* -------------------------------------------------------------------------- */
-/* Manifesto                                                                  */
-/* -------------------------------------------------------------------------- */
+/* Manifesto */
 
 .manifesto {
   position: relative;
@@ -413,15 +258,10 @@ html.menu-open main {
   justify-content: center;
   width: 100vw;
   height: 100vh;
-  /* Small-viewport height: 100vh on mobile includes the area behind the
-     browser chrome, so vh-sized sections would overflow the visible screen. */
   height: 100svh;
   padding: 0 1.5rem;
 }
 
-/* The chrome stars canvas, pinned to the section's top-right corner.
-   Decorative: inert to the pointer, and below the dim backdrop (z-index 20)
-   so it fades with the rest of the page when a phrase is active. */
 .chrome-stars {
   position: absolute;
   top: clamp(1rem, 4vh, 2.5rem);
@@ -460,8 +300,6 @@ html.menu-open main {
   text-decoration-style: solid;
 }
 
-/* While a phrase is active, the rest of the paragraph falls back. The active
-   phrase itself rises above the dimming backdrop. */
 .manifesto[data-open="true"] .manifesto__text {
   color: color-mix(in srgb, var(--muted) 45%, transparent);
 }
@@ -480,8 +318,6 @@ html.menu-open main {
   display: contents;
 }
 
-/* Invisible cache-warmer for the flyout photos (see the component). Kept at
-   1px rather than display:none so the browser actually fetches them. */
 .manifesto__preload {
   position: absolute;
   width: 1px;
@@ -495,8 +331,6 @@ html.menu-open main {
   height: auto;
 }
 
-/* Shared page dim (manifesto phrases, collection pieces). Everything except
-   the active element stacks below it; theme-aware via --background. */
 .dim-backdrop {
   position: fixed;
   inset: 0;
@@ -511,8 +345,6 @@ html.menu-open main {
   opacity: 0.82;
 }
 
-/* Items are born at the phrase's centre (--ox/--oy) and fly out to their
-   per-item offset (--dx/--dy/--rot), staggered by --delay. */
 .manifesto__flyout-item {
   position: fixed;
   z-index: 40;
@@ -537,7 +369,6 @@ html.menu-open main {
     scale(1);
 }
 
-/* Sharper, faster trip back into the phrase. */
 .manifesto__flyout[data-show="false"] .manifesto__flyout-item {
   transition-duration: 0.4s, 0.25s;
   transition-timing-function: cubic-bezier(0.76, 0, 0.24, 1), ease;
@@ -577,8 +408,6 @@ html.menu-open main {
   box-shadow: 0 1.5rem 3rem rgb(0 0 0 / 0.4);
 }
 
-/* Short viewports (landscape phones): shrink the flyout photos so the
-   vertical stack fits — photoHalfHeight() in the component mirrors this. */
 @media (max-height: 32rem) {
   .manifesto__photo {
     width: clamp(6rem, 22vh, 16rem);
@@ -595,14 +424,11 @@ html.menu-open main {
   }
 }
 
-/* -------------------------------------------------------------------------- */
-/* Drop ticker (CRT running sign)                                             */
-/* -------------------------------------------------------------------------- */
+/* Ticker */
 
 .ticker {
   position: relative;
   overflow: hidden;
-  /* Inverted against the theme. */
   background: var(--foreground);
   color: var(--background);
   padding: 0.55rem 0;
@@ -623,16 +449,13 @@ html.menu-open main {
   font-size: 1.05rem;
   font-weight: 600;
   letter-spacing: 0.18em;
-  /* Phosphor glow. */
   text-shadow: 0 0 0.35em color-mix(in srgb, currentColor 65%, transparent);
-  /* Dot-matrix lettering: punch the solid glyphs into a grid of dots. */
   -webkit-mask-image: radial-gradient(circle, #000 55%, transparent 68%);
   mask-image: radial-gradient(circle, #000 55%, transparent 68%);
   -webkit-mask-size: 0.19em 0.19em;
   mask-size: 0.19em 0.19em;
 }
 
-/* Faint scanlines over the strip. */
 .ticker::after {
   content: "";
   position: absolute;
@@ -651,9 +474,7 @@ html.menu-open main {
   }
 }
 
-/* -------------------------------------------------------------------------- */
-/* Collection board (the archive)                                             */
-/* -------------------------------------------------------------------------- */
+/* Collection */
 
 .collection {
   position: relative;
@@ -665,8 +486,6 @@ html.menu-open main {
   padding: 4rem 1.5rem;
 }
 
-/* Mobile: a simple two-column pin wall; absolute collage kicks in on
-   wider screens. */
 .collection__board {
   position: relative;
   display: grid;
@@ -692,8 +511,6 @@ html.menu-open main {
   outline-offset: 4px;
 }
 
-/* A hand-pinned tilt on every other photo (the desktop collage below sets
-   its own per-photo rotations). */
 .collection__item:nth-child(2n) {
   transform: rotate(1.5deg);
 }
@@ -708,8 +525,6 @@ html.menu-open main {
   height: auto;
 }
 
-/* Name/season and description fade in over the photo — plain opacity, no
-   motion. */
 .collection__caption {
   position: absolute;
   left: 0;
@@ -738,8 +553,6 @@ html.menu-open main {
   text-transform: lowercase;
 }
 
-/* Specificity must beat the per-photo nth-child rules in the desktop collage
-   below, otherwise the hovered piece stays dimmed under the backdrop. */
 .collection__board .collection__item[data-active="true"] {
   z-index: 30;
 }
@@ -748,8 +561,6 @@ html.menu-open main {
   opacity: 1;
 }
 
-/* The pinned-to-a-clipboard collage. Each photo gets its own spot, tilt and
-   stacking order so the cluster overlaps like the reference board. */
 @media (min-width: 48rem) {
   .collection__board {
     display: block;

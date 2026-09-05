@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { params, type StarFieldParams } from "@/debug/params";
+import type { StarFieldParams } from "@/debug/params";
 import { createChromeMaterial } from "./chrome";
 
 const MODEL_URL = "/models/star.glb";

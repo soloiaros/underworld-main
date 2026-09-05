@@ -16,7 +16,7 @@ interface Piece {
 
 const PIECES: Piece[] = [
   {
-    src: "/img/collection1.png",
+    src: "/img/collection1.webp",
     alt: "Lookbook photo from the trap queen collection",
     width: 346,
     height: 421,
@@ -25,7 +25,7 @@ const PIECES: Piece[] = [
     description: "signature hoodies and balaclavas, fragrance, socks",
   },
   {
-    src: "/img/collection2.png",
+    src: "/img/collection2.webp",
     alt: "Lookbook photo from the static bloom collection",
     width: 579,
     height: 717,
@@ -34,7 +34,7 @@ const PIECES: Piece[] = [
     description: "washed tees, mesh jerseys, chain-stitch caps",
   },
   {
-    src: "/img/collection3.png",
+    src: "/img/collection3.webp",
     alt: "Lookbook photo from the graveyard shift collection",
     width: 590,
     height: 697,
@@ -43,7 +43,7 @@ const PIECES: Piece[] = [
     description: "workwear jackets, cargo trousers, ribbed beanies",
   },
   {
-    src: "/img/collection4.png",
+    src: "/img/collection4.webp",
     alt: "Lookbook photo from the nocturne athletics collection",
     width: 719,
     height: 719,
@@ -52,7 +52,7 @@ const PIECES: Piece[] = [
     description: "track sets, reflective runners, tube socks",
   },
   {
-    src: "/img/collection5.png",
+    src: "/img/collection5.webp",
     alt: "Lookbook photo from the halo gutter collection",
     width: 378,
     height: 378,
