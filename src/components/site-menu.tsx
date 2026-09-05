@@ -8,6 +8,7 @@ import {
   type CSSProperties,
   type MouseEvent,
 } from "react";
+import ThemeToggle from "./theme-toggle";
 
 const ROWS: {
   width: string;
@@ -81,6 +82,7 @@ export default function SiteMenu() {
           <span className="site-menu-button__line" aria-hidden="true" />
           <span className="site-menu-button__line" aria-hidden="true" />
         </button>
+        <ThemeToggle />
       </header>
 
       <nav

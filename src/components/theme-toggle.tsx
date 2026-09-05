@@ -4,15 +4,20 @@ import { useTheme } from "./theme-provider";
 
 export default function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
+  const next = theme === "dark" ? "light" : "dark";
 
   return (
     <button
       type="button"
+      className="theme-toggle"
       onClick={toggleTheme}
-      aria-label="Toggle theme"
-      className="fixed bottom-5 right-5 z-10 rounded-full border border-foreground/15 bg-background/60 px-4 py-2 text-xs font-medium uppercase tracking-wider text-muted backdrop-blur transition-colors hover:border-foreground/30 hover:text-foreground"
+      aria-label={`Switch to ${next} theme`}
     >
-      {theme === "dark" ? "Light" : "Dark"}
+      <span
+        className="theme-toggle__icon"
+        data-icon={theme === "dark" ? "sun" : "moon"}
+        aria-hidden="true"
+      />
     </button>
   );
 }

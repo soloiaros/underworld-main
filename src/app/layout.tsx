@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { ThemeProvider } from "@/components/theme-provider";
 import MistBackground from "@/components/mist-background";
 import SiteMenu from "@/components/site-menu";
-import ThemeToggle from "@/components/theme-toggle";
 import LoadingScreen from "@/components/loading-screen";
 import DebugGui from "@/debug/debug-gui";
 import "./globals.css";
@@ -26,7 +25,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <MistBackground />
           <SiteMenu />
           {children}
-          <ThemeToggle />
           <DebugGui />
         </ThemeProvider>
       </body>
