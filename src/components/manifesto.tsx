@@ -54,7 +54,7 @@ const SEQUENCES: Sequence[] = [
       },
       {
         kind: "photo",
-        src: "/img/hq.png",
+        src: "/img/hq.webp",
         alt: "The first Underworld Studios HQ, 2001",
         width: 770,
         height: 516,
@@ -98,7 +98,7 @@ const SEQUENCES: Sequence[] = [
     items: [
       {
         kind: "photo",
-        src: "/img/customer1.png",
+        src: "/img/customer1.webp",
         alt: "A street angel wearing Underworld Studios",
         width: 836,
         height: 638,
@@ -108,7 +108,7 @@ const SEQUENCES: Sequence[] = [
       },
       {
         kind: "photo",
-        src: "/img/customer2.png",
+        src: "/img/customer2.webp",
         alt: "A street angel wearing Underworld Studios",
         width: 790,
         height: 788,
@@ -118,7 +118,7 @@ const SEQUENCES: Sequence[] = [
       },
       {
         kind: "photo",
-        src: "/img/customer3.png",
+        src: "/img/customer3.webp",
         alt: "A street angel wearing Underworld Studios",
         width: 946,
         height: 706,
